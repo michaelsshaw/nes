@@ -4,6 +4,7 @@
 #include <opcodes.h>
 
 #include <nes.h>
+#include "ppu.h"
 
 #include "mappers/mapper.h"
 
@@ -32,11 +33,6 @@ nes_cpu_addr(u16 addr)
         return addr & 0x07FF;
     }
 
-    IFINRANGE(addr, 0x2000, 0x3FFF) //
-    {
-        return 0x2000 + (addr & 0x0007);
-    }
-
     return addr;
 }
 
@@ -62,6 +58,14 @@ mem_read(struct nes *em, u16 addr)
     addr    = MAP_CALL(em, em->cartridge.mapper, addr);
 
     CYCLE;
+
+    IFINRANGE(addr, 0x2000, 0x3FFF) //
+    {
+        u8 *p = (u8 *)&em->ppu->registers;
+        p += (addr & 0x0007);
+        return *p;
+    }
+
     return mem[nes_cpu_addr(addr)];
 }
 
@@ -70,8 +74,17 @@ mem_write(struct nes *em, u16 addr, u8 val)
 {
     u8 *mem = MM;
     addr    = MAP_CALL(em, em->cartridge.mapper, addr);
-
     CYCLE;
+
+    IFINRANGE(addr, 0x2000, 0x3FFF) //
+    {
+        u8 *p = (u8 *)&em->ppu->registers;
+        p += (addr & 0x0007);
+
+        *p = val;
+        return;
+    }
+
     mem[nes_cpu_addr(addr)] = val;
 }
 
@@ -118,6 +131,78 @@ cpu_clock(struct nes *em)
         cycles++;
     }
     CYCLES -= 1;
+}
+
+void
+cpu_nmi(struct nes *em)
+{
+
+    cpu_push(em, (PC >> 0x08));
+    cpu_push(em, (PC & 0xFF));
+
+    CLFLAG(CPU, FLAG_B);
+    SETFLAG(CPU, FLAG_5);
+    SETFLAG(CPU, FLAG_I);
+
+    cpu_push(em, CPU->flags);
+
+    u8 ll = mem_read(em, 0xFFFA);
+    u8 hh = mem_read(em, 0xFFFB);
+
+    PC     = ((hh << 0x08) | ll);
+    CYCLES = 7;
+}
+
+void
+cpu_irq(struct nes *em)
+{
+    if (!GETFLAG(CPU, FLAG_I))
+    {
+        cpu_push(em, (PC >> 0x08));
+        cpu_push(em, (PC & 0xFF));
+
+        CLFLAG(CPU, FLAG_B);
+        SETFLAG(CPU, FLAG_5);
+        SETFLAG(CPU, FLAG_I);
+
+        cpu_push(em, CPU->flags);
+
+        u8 ll = mem_read(em, 0xFFFE);
+        u8 hh = mem_read(em, 0xFFFF);
+
+        PC     = ((hh << 0x08) | ll);
+        CYCLES = 7;
+    }
+}
+
+void
+cpu_rti(struct nes *em)
+{
+    CPU->flags = cpu_pop(em);
+    CLFLAG(CPU, FLAG_B);
+    CLFLAG(CPU, FLAG_5);
+
+    u8 ll = cpu_pop(em);
+    u8 hh = cpu_pop(em);
+
+    PC = (hh << 0x08) | ll;
+}
+
+void
+cpu_reset(struct nes *em)
+{
+    u8 ll = mem_read(em, 0xFFFC);
+    u8 hh = mem_read(em, 0xFFFD);
+
+    PC = ((hh << 0x08) | ll);
+
+    CPU->flags = 0x34;
+    A          = 0;
+    X          = 0;
+    Y          = 0;
+    SP         = 0xFD;
+
+    CYCLES = 8;
 }
 
 void

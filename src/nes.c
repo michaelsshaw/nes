@@ -8,6 +8,8 @@
 #include "ppu.h"
 #include "util.h"
 
+#include <SDL.h>
+
 #include "mappers/mapper.h"
 
 struct nes *NES;
@@ -18,6 +20,31 @@ void
 mappers_init()
 {
     MAP_DECL(00);
+}
+
+void
+nes_window_init(SDL_Window **win, SDL_Renderer **ren)
+{
+    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_Window *window = SDL_CreateWindow("SDL2",
+                                          SDL_WINDOWPOS_UNDEFINED,
+                                          SDL_WINDOWPOS_UNDEFINED,
+                                          600,
+                                          600,
+                                          SDL_WINDOW_SHOWN);
+
+    SDL_Renderer *renderer =
+      SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    SDL_RendererInfo info;
+    SDL_GetRendererInfo(renderer, &info);
+
+    printf("Renderer name: %s\n", info.name);
+    printf("Texture formats:\n");
+    for (u32 i = 0; i < info.num_texture_formats; i++)
+    {
+        printf("\t%s\n", SDL_GetPixelFormatName(info.texture_formats[i]));
+    }
 }
 
 int
@@ -32,6 +59,11 @@ main(int argc, char **argv)
     NES->mappers  = malloc(0xFF);
     mappers_init();
 
+    SDL_Window   *window;
+    SDL_Renderer *renderer;
+
+    nes_window_init(&window, &renderer);
+
     struct nes *nes = NES;
     if (argc != 2)
     {
@@ -42,11 +74,7 @@ main(int argc, char **argv)
     memset(nes->cpu, 0, sizeof(struct cpu));
     memset(nes->cpu->mem, 0, MEM_SIZE);
 
-    nes->cpu->flags = 0x34;
-    nes->cpu->A     = 0;
-    nes->cpu->X     = 0;
-    nes->cpu->Y     = 0;
-    nes->cpu->SP    = 0xFD;
+    cpu_reset(nes);
 
     // LOAD ROM
 
@@ -110,36 +138,6 @@ main(int argc, char **argv)
     long long       billion = 1000000000L;
 
     return 0;
-}
-
-void
-nes_nmi(struct nes *nes)
-{
-    u8 ll = mem_read(nes, 0xFFFA);
-    u8 hh = mem_read(nes, 0xFFFB);
-
-    nes->cpu->PC = ((hh << 0x08) | ll);
-}
-
-void
-nes_reset(struct nes *nes)
-{
-    u8 ll = mem_read(nes, 0xFFFC);
-    u8 hh = mem_read(nes, 0xFFFD);
-
-    nes->cpu->PC = ((hh << 0x08) | ll);
-}
-
-void
-nes_irq(struct nes *nes)
-{
-    if (!GETFLAG(nes->cpu, FLAG_I))
-    {
-        u8 ll = mem_read(nes, 0xFFFE);
-        u8 hh = mem_read(nes, 0xFFFF);
-
-        nes->cpu->PC = ((hh << 0x08) | ll);
-    }
 }
 
 void

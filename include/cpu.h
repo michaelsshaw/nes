@@ -58,4 +58,7 @@ mem_write(struct nes *em, u16 addr, u8 val);
 void
 cpu_clock(struct nes *em);
 
+void
+cpu_reset(struct nes *em);
+
 #endif // CPU_H_

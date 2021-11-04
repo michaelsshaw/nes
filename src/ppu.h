@@ -34,8 +34,19 @@
 
 struct ppu
 {
-    u8  latch;
     u8 *mem;
+
+    struct registers
+    {
+        u8 ppuctrl;
+        u8 ppumask;
+        u8 ppustatus;
+        u8 oamaddr;
+        u8 oamdata;
+        u8 ppuscroll;
+        u8 ppuaddr;
+        u8 ppudata;
+    } registers;
 };
 
 #endif // NES_PPU_H_
