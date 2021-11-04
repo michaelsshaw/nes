@@ -7,8 +7,8 @@
 #define A            CPU->A
 #define X            CPU->X
 #define Y            CPU->Y
-#define MEM(a)       mem_read(em, a)
-#define MEMSET(a, v) mem_write(em, a, v)
+#define MEM(a)       cpu_read(em, a)
+#define MEMSET(a, v) cpu_write(em, a, v)
 #define MEMS(a)      CPU->mem[a]; // silent mode shhhh
 #define CYCLE        CPU->cycles += 1
 #define CYCLES       CPU->cycles

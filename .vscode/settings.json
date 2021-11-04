@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.ajs": "javascript",
+        "system_error": "cpp",
+        "xlocale": "cpp"
+    }
+}

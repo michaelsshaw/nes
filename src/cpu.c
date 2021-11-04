@@ -36,10 +36,29 @@ nes_cpu_addr(u16 addr)
     return addr;
 }
 
+u8 *
+cpu_get_mempointer(struct nes *em, u16 addr)
+{
+    u8 *mem = MM;
+    IFINRANGE(addr, 0x0000, 0x1FFF) //
+    {
+        return (mem + (addr & 0x07FF));
+    }
+
+    IFINRANGE(addr, 0x2000, 0x3FFF) //
+    {
+        u8 *p = (u8 *)&em->ppu->registers;
+        p += (addr & 0x0007);
+        return p;
+    }
+
+    return MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU);
+}
+
 void
 cpu_push(struct nes *em, u8 val)
 {
-    mem_write(em, 0x0100 | SP, val);
+    cpu_write(em, 0x0100 | SP, val);
     SP -= 1;
 }
 
@@ -47,45 +66,24 @@ u8
 cpu_pop(struct nes *em)
 {
     SP += 1;
-    return mem_read(em, 0x0100 | SP);
+    return cpu_read(em, 0x0100 | SP);
 }
 
 u8
-mem_read(struct nes *em, u16 addr)
+cpu_read(struct nes *em, u16 addr)
 {
-
-    u8 *mem = MM;
-    addr    = MAP_CALL(em, em->cartridge.mapper, addr);
-
     CYCLE;
 
-    IFINRANGE(addr, 0x2000, 0x3FFF) //
-    {
-        u8 *p = (u8 *)&em->ppu->registers;
-        p += (addr & 0x0007);
-        return *p;
-    }
-
-    return mem[nes_cpu_addr(addr)];
+    return *cpu_get_mempointer(em, addr);
 }
 
 void
-mem_write(struct nes *em, u16 addr, u8 val)
+cpu_write(struct nes *em, u16 addr, u8 val)
 {
-    u8 *mem = MM;
-    addr    = MAP_CALL(em, em->cartridge.mapper, addr);
+    u8 *mem = cpu_get_mempointer(em, addr);
     CYCLE;
 
-    IFINRANGE(addr, 0x2000, 0x3FFF) //
-    {
-        u8 *p = (u8 *)&em->ppu->registers;
-        p += (addr & 0x0007);
-
-        *p = val;
-        return;
-    }
-
-    mem[nes_cpu_addr(addr)] = val;
+    *mem = val;
 }
 
 void
@@ -96,7 +94,7 @@ cpu_clock(struct nes *em)
 {
     if (cycles == 0)
     {
-        u8 opc = mem_read(em, PC);
+        u8 opc = cpu_read(em, PC);
 
         noprintf(
           "|SP: %02x|A: %02x|X: %02x|Y: %02x| %c%c%c%c%c%c%c%c || 0x%04X| "
@@ -146,8 +144,8 @@ cpu_nmi(struct nes *em)
 
     cpu_push(em, CPU->flags);
 
-    u8 ll = mem_read(em, 0xFFFA);
-    u8 hh = mem_read(em, 0xFFFB);
+    u8 ll = cpu_read(em, 0xFFFA);
+    u8 hh = cpu_read(em, 0xFFFB);
 
     PC     = ((hh << 0x08) | ll);
     CYCLES = 7;
@@ -167,8 +165,8 @@ cpu_irq(struct nes *em)
 
         cpu_push(em, CPU->flags);
 
-        u8 ll = mem_read(em, 0xFFFE);
-        u8 hh = mem_read(em, 0xFFFF);
+        u8 ll = cpu_read(em, 0xFFFE);
+        u8 hh = cpu_read(em, 0xFFFF);
 
         PC     = ((hh << 0x08) | ll);
         CYCLES = 7;
@@ -191,8 +189,8 @@ cpu_rti(struct nes *em)
 void
 cpu_reset(struct nes *em)
 {
-    u8 ll = mem_read(em, 0xFFFC);
-    u8 hh = mem_read(em, 0xFFFD);
+    u8 ll = cpu_read(em, 0xFFFC);
+    u8 hh = cpu_read(em, 0xFFFD);
 
     PC = ((hh << 0x08) | ll);
 

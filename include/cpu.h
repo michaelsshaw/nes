@@ -50,10 +50,10 @@ u8
 cpu_pop(struct nes *em);
 
 u8
-mem_read(struct nes *em, u16 addr);
+cpu_read(struct nes *em, u16 addr);
 
 void
-mem_write(struct nes *em, u16 addr, u8 val);
+cpu_write(struct nes *em, u16 addr, u8 val);
 
 void
 cpu_clock(struct nes *em);
