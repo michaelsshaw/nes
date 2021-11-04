@@ -49,6 +49,7 @@ cpu_get_mempointer(struct nes *em, u16 addr)
     {
         u8 *p = (u8 *)&em->ppu->registers;
         p += (addr & 0x0007);
+        ppu_touch(em, (addr & 0x0007));
         return p;
     }
 

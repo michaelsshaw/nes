@@ -47,6 +47,19 @@ struct ppu
         u8 ppuaddr;
         u8 ppudata;
     } registers;
+
+    u16 vaddr;
+    u16 vaddrtemp;
+    u16 fxscroll;
+    u8  fstoggle;
+
+    u16 reg_shift_1;
+    u16 reg_shift_2;
+
+    u16 cycleno;
 };
+
+void
+ppu_touch(struct nes *em, u16 addr);
 
 #endif // NES_PPU_H_
