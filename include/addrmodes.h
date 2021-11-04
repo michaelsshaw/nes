@@ -1,11 +1,11 @@
 #ifndef ADDRMODES_H_
 #define ADDRMODES_H_
 
-#include "em6502.h"
+#include <em6502.h>
 
-#define ADM_DECL(m) u16 adm_##m(struct em6502 *em)
+#define ADM_DECL(m) u16 adm_##m(struct nes *em)
 
-typedef u16 (*admcall) (struct em6502 *em);
+typedef u16 (*admcall) (struct nes *em);
 
 #define ADDR_ACC 0x01
 #define ADDR_ABS 0x02

@@ -1,6 +1,8 @@
 #ifndef OPCODES_H_
 #define OPCODES_H_
 
+#include <addrmodes.h>
+#include <instructions.h>
 #include <stdlib.h>
 
 #define OPC(i, m) inscall_##i, adm_##m

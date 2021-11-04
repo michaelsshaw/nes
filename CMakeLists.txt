@@ -16,6 +16,3 @@ target_link_libraries(NES m)
 if(NOT WIN32)
     target_link_libraries(NES dl)
 endif(NOT WIN32)
-
-add_subdirectory(lib/6502)
-target_link_libraries(NES ${6502_LIBRARIES})

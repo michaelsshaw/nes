@@ -1,0 +1,127 @@
+#include <stdio.h>
+
+#include <instructions.h>
+#include <opcodes.h>
+
+#include <nes.h>
+
+#include "mappers/mapper.h"
+
+#define CPU    em->cpu
+#define PC     CPU->PC
+#define SP     CPU->SP
+#define A      CPU->A
+#define X      CPU->X
+#define Y      CPU->Y
+#define MM     CPU->mem
+#define CYCLE  CPU->cycles += 1
+#define CYCLES CPU->cycles
+
+#define DBG_FLAG(flag) GETFLAG(CPU, flag) ? #flag[sizeof(#flag) - 2] : '-'
+
+#define INRANGE(_n, _a, _b)   (((_n) >= (_a)) && ((_n) < (_a)))
+#define IFINRANGE(_m, _c, _d) if (INRANGE((_m), (_c), (_d)))
+
+long long cycles = 0;
+
+u16
+nes_cpu_addr(u16 addr)
+{
+    IFINRANGE(addr, 0x0000, 0x1FFF) //
+    {
+        return addr & 0x07FF;
+    }
+
+    IFINRANGE(addr, 0x2000, 0x3FFF) //
+    {
+        return 0x2000 + (addr & 0x0007);
+    }
+
+    return addr;
+}
+
+void
+cpu_push(struct nes *em, u8 val)
+{
+    mem_write(em, 0x0100 | SP, val);
+    SP -= 1;
+}
+
+u8
+cpu_pop(struct nes *em)
+{
+    SP += 1;
+    return mem_read(em, 0x0100 | SP);
+}
+
+u8
+mem_read(struct nes *em, u16 addr)
+{
+
+    u8 *mem = MM;
+    addr    = MAP_CALL(em, em->cartridge.mapper, addr);
+
+    CYCLE;
+    return mem[nes_cpu_addr(addr)];
+}
+
+void
+mem_write(struct nes *em, u16 addr, u8 val)
+{
+    u8 *mem = MM;
+    addr    = MAP_CALL(em, em->cartridge.mapper, addr);
+
+    CYCLE;
+    mem[nes_cpu_addr(addr)] = val;
+}
+
+void
+intr();
+
+void
+cpu_clock(struct nes *em)
+{
+    if (cycles == 0)
+    {
+        u8 opc = mem_read(em, PC);
+
+        noprintf(
+          "|SP: %02x|A: %02x|X: %02x|Y: %02x| %c%c%c%c%c%c%c%c || 0x%04X| "
+          "0x%02X %s ",
+          SP,
+          A,
+          X,
+          Y,
+          DBG_FLAG(FLAG_N),
+          DBG_FLAG(FLAG_V),
+          DBG_FLAG(FLAG_5),
+          DBG_FLAG(FLAG_B),
+          DBG_FLAG(FLAG_D),
+          DBG_FLAG(FLAG_I),
+          DBG_FLAG(FLAG_Z),
+          DBG_FLAG(FLAG_C),
+          PC,
+          opc,
+          debug_codes[opc]);
+
+        admcall callback_adm = (admcall)codes[opc * 2 + 1];
+        inscall callback_ins = (inscall)codes[opc * 2];
+
+        PC += 1;
+
+        if (callback_adm != NULL && callback_ins != NULL)
+        {
+            u16 addr = callback_adm(em);
+            callback_ins(em, addr);
+        }
+
+        cycles++;
+    }
+    CYCLES -= 1;
+}
+
+void
+prcycles()
+{
+    printf("\n\n\nTook %lli cycles\n", cycles);
+}

@@ -1,5 +1,4 @@
 #include <instructions.h>
-#include <addrmodes.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -10,14 +9,14 @@
 #define Y            CPU->Y
 #define MEM(a)       mem_read(em, a)
 #define MEMSET(a, v) mem_write(em, a, v)
-#define MEMS(a)      em->mem[a]; // silent mode shhhh
-#define CYCLE        em->cycles += 1
-#define CYCLES       em->cycles
-#define CSET(a)      em->cycles = a;
+#define MEMS(a)      CPU->mem[a]; // silent mode shhhh
+#define CYCLE        CPU->cycles += 1
+#define CYCLES       CPU->cycles
+#define CSET(a)      CPU->cycles = a;
 
 #define DSIGN(c) (d && invert) ? -(c) : +(c);
 
-#define ADM em->addrmode
+#define ADM CPU->addrmode
 
 int invert = 0;
 
