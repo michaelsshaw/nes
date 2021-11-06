@@ -25,17 +25,6 @@
 
 long long cycles = 0;
 
-u16
-nes_cpu_addr(u16 addr)
-{
-    IFINRANGE(addr, 0x0000, 0x1FFF) //
-    {
-        return addr & 0x07FF;
-    }
-
-    return addr;
-}
-
 u8 *
 cpu_get_mempointer(struct cpu *cpu, u16 addr)
 {
