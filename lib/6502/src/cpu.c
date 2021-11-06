@@ -62,7 +62,6 @@ cpu_read(struct cpu *cpu, u16 addr)
 {
     cpucallback callback = (cpucallback)cpu->callback;
     CYCLE;
-
     return *(callback(cpu, addr));
 }
 
@@ -82,10 +81,9 @@ intr();
 void
 cpu_clock(struct cpu *cpu)
 {
-    if (cycles == 0)
+    if (CYCLES == 0)
     {
         u8 opc = cpu_read(cpu, PC);
-
         noprintf(
           "|SP: %02x|A: %02x|X: %02x|Y: %02x| %c%c%c%c%c%c%c%c || 0x%04X| "
           "0x%02X %s ",
@@ -115,6 +113,7 @@ cpu_clock(struct cpu *cpu)
             u16 addr = callback_adm(cpu);
             callback_ins(cpu, addr);
         }
+        noprintf("\n");
 
         cycles++;
     }

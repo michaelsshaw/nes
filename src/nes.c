@@ -104,12 +104,12 @@ main(int argc, char **argv)
     NES->mappers  = malloc(0xFF * sizeof(void *));
 
     struct nes *nes = NES;
-    nes->cpu->fw = nes;
+    nes->cpu->fw    = nes;
     cpu_set_memcallback(nes->cpu, cpu_get_mempointer);
 
     mappers_init();
 
-    SDL_Window   *window;
+    SDL_Window *  window;
     SDL_Renderer *renderer;
 
     nes_window_init(&window, &renderer);
