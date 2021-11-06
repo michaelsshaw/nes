@@ -2,6 +2,7 @@
 #define NES_PPU_H_
 
 #include <cpu.h>
+#include <nes.h>
 
 #define PPUCTRL   0x2000
 #define PPUMASK   0x2001

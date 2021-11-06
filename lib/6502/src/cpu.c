@@ -3,12 +3,7 @@
 #include <instructions.h>
 #include <opcodes.h>
 
-#include <nes.h>
-#include "ppu.h"
-
-#include "mappers/mapper.h"
-
-#define CPU    em->cpu
+#define CPU    cpu
 #define PC     CPU->PC
 #define SP     CPU->SP
 #define A      CPU->A
@@ -37,51 +32,45 @@ nes_cpu_addr(u16 addr)
 }
 
 u8 *
-cpu_get_mempointer(struct nes *em, u16 addr)
+cpu_default_callback(struct cpu *cpu, u16 addr)
 {
-    u8 *mem = MM;
-    IFINRANGE(addr, 0x0000, 0x1FFF) //
-    {
-        return (mem + (addr & 0x07FF));
-    }
-
-    IFINRANGE(addr, 0x2000, 0x3FFF) //
-    {
-        u8 *p = (u8 *)&em->ppu->registers;
-        p += (addr & 0x0007);
-        ppu_touch(em, (addr & 0x0007));
-        return p;
-    }
-
-    return MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU);
+    return (cpu->mem + addr);
 }
 
 void
-cpu_push(struct nes *em, u8 val)
+cpu_set_memcallback(struct cpu *cpu, void *func)
 {
-    cpu_write(em, 0x0100 | SP, val);
+    CPU->callback = func;
+}
+
+void
+cpu_push(struct cpu *cpu, u8 val)
+{
+    cpu_write(cpu, 0x0100 | SP, val);
     SP -= 1;
 }
 
 u8
-cpu_pop(struct nes *em)
+cpu_pop(struct cpu *cpu)
 {
     SP += 1;
-    return cpu_read(em, 0x0100 | SP);
+    return cpu_read(cpu, 0x0100 | SP);
 }
 
 u8
-cpu_read(struct nes *em, u16 addr)
+cpu_read(struct cpu *cpu, u16 addr)
 {
+    cpucallback callback = (cpucallback)cpu->callback;
     CYCLE;
 
-    return *cpu_get_mempointer(em, addr);
+    return *(callback(cpu, addr));
 }
 
 void
-cpu_write(struct nes *em, u16 addr, u8 val)
+cpu_write(struct cpu *cpu, u16 addr, u8 val)
 {
-    u8 *mem = cpu_get_mempointer(em, addr);
+    cpucallback callback = (cpucallback)cpu->callback;
+    u8 *        mem      = (callback(cpu, addr));
     CYCLE;
 
     *mem = val;
@@ -91,11 +80,11 @@ void
 intr();
 
 void
-cpu_clock(struct nes *em)
+cpu_clock(struct cpu *cpu)
 {
     if (cycles == 0)
     {
-        u8 opc = cpu_read(em, PC);
+        u8 opc = cpu_read(cpu, PC);
 
         noprintf(
           "|SP: %02x|A: %02x|X: %02x|Y: %02x| %c%c%c%c%c%c%c%c || 0x%04X| "
@@ -123,8 +112,8 @@ cpu_clock(struct nes *em)
 
         if (callback_adm != NULL && callback_ins != NULL)
         {
-            u16 addr = callback_adm(em);
-            callback_ins(em, addr);
+            u16 addr = callback_adm(cpu);
+            callback_ins(cpu, addr);
         }
 
         cycles++;
@@ -133,41 +122,41 @@ cpu_clock(struct nes *em)
 }
 
 void
-cpu_nmi(struct nes *em)
+cpu_nmi(struct cpu *cpu)
 {
 
-    cpu_push(em, (PC >> 0x08));
-    cpu_push(em, (PC & 0xFF));
+    cpu_push(cpu, (PC >> 0x08));
+    cpu_push(cpu, (PC & 0xFF));
 
     CLFLAG(CPU, FLAG_B);
     SETFLAG(CPU, FLAG_5);
     SETFLAG(CPU, FLAG_I);
 
-    cpu_push(em, CPU->flags);
+    cpu_push(cpu, CPU->flags);
 
-    u8 ll = cpu_read(em, 0xFFFA);
-    u8 hh = cpu_read(em, 0xFFFB);
+    u8 ll = cpu_read(cpu, 0xFFFA);
+    u8 hh = cpu_read(cpu, 0xFFFB);
 
     PC     = ((hh << 0x08) | ll);
     CYCLES = 7;
 }
 
 void
-cpu_irq(struct nes *em)
+cpu_irq(struct cpu *cpu)
 {
     if (!GETFLAG(CPU, FLAG_I))
     {
-        cpu_push(em, (PC >> 0x08));
-        cpu_push(em, (PC & 0xFF));
+        cpu_push(cpu, (PC >> 0x08));
+        cpu_push(cpu, (PC & 0xFF));
 
         CLFLAG(CPU, FLAG_B);
         SETFLAG(CPU, FLAG_5);
         SETFLAG(CPU, FLAG_I);
 
-        cpu_push(em, CPU->flags);
+        cpu_push(cpu, CPU->flags);
 
-        u8 ll = cpu_read(em, 0xFFFE);
-        u8 hh = cpu_read(em, 0xFFFF);
+        u8 ll = cpu_read(cpu, 0xFFFE);
+        u8 hh = cpu_read(cpu, 0xFFFF);
 
         PC     = ((hh << 0x08) | ll);
         CYCLES = 7;
@@ -175,23 +164,23 @@ cpu_irq(struct nes *em)
 }
 
 void
-cpu_rti(struct nes *em)
+cpu_rti(struct cpu *cpu)
 {
-    CPU->flags = cpu_pop(em);
+    CPU->flags = cpu_pop(cpu);
     CLFLAG(CPU, FLAG_B);
     CLFLAG(CPU, FLAG_5);
 
-    u8 ll = cpu_pop(em);
-    u8 hh = cpu_pop(em);
+    u8 ll = cpu_pop(cpu);
+    u8 hh = cpu_pop(cpu);
 
     PC = (hh << 0x08) | ll;
 }
 
 void
-cpu_reset(struct nes *em)
+cpu_reset(struct cpu *cpu)
 {
-    u8 ll = cpu_read(em, 0xFFFC);
-    u8 hh = cpu_read(em, 0xFFFD);
+    u8 ll = cpu_read(cpu, 0xFFFC);
+    u8 hh = cpu_read(cpu, 0xFFFD);
 
     PC = ((hh << 0x08) | ll);
 

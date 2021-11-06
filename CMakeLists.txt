@@ -3,9 +3,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-
 include_directories(include)
 include_directories(lib/SDL2/include)
+include_directories(lib/6502/include)
 
 project(project_NES)
 
@@ -16,8 +16,12 @@ add_executable(NES ${SRCS})
 target_link_libraries(NES m)
 if(NOT WIN32)
     target_link_libraries(NES dl)
+    find_package(SDL2 REQUIRED)
 endif(NOT WIN32)
-target_link_libraries(NES ${SDL2_LIBRARIES})
 
-add_subdirectory(lib/SDL2)
+if(WIN32)
+    add_subdirectory(lib/SDL2)
+endif(WIN32)
+add_subdirectory(lib/6502)
 target_link_libraries(NES SDL2 ${SDL2_LIBRARIES})
+target_link_libraries(NES 6502 ${6502_LIBRARIES})

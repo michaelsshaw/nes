@@ -29,7 +29,7 @@ typedef uint32_t u32;
 
 #define MEM_SIZE 65536 // 64K in bytes
 
-struct nes;
+struct em6502;
 
 struct cpu
 {
@@ -41,24 +41,43 @@ struct cpu
     u8 *mem;
     u8  cycles;
     u8  addrmode;
+
+    void *fw;
+    void *callback;
 };
+typedef u8 *(*cpucallback)(struct cpu *cpu, u16);
+
+u8 *
+cpu_default_callback(struct cpu *cpu, u16 addr);
 
 void
-cpu_push(struct nes *em, u8 val);
+cpu_push(struct cpu *cpu, u8 val);
 
 u8
-cpu_pop(struct nes *em);
+cpu_pop(struct cpu *cpu);
 
 u8
-cpu_read(struct nes *em, u16 addr);
+cpu_read(struct cpu *cpu, u16 addr);
 
 void
-cpu_write(struct nes *em, u16 addr, u8 val);
+cpu_write(struct cpu *cpu, u16 addr, u8 val);
 
 void
-cpu_clock(struct nes *em);
+cpu_clock(struct cpu *cpu);
 
 void
-cpu_reset(struct nes *em);
+cpu_set_memcallback(struct cpu *cpu, void *func);
+
+void
+cpu_nmi(struct cpu *cpu);
+
+void
+cpu_irq(struct cpu *cpu);
+
+void
+cpu_rti(struct cpu *cpu);
+
+void
+cpu_reset(struct cpu *cpu);
 
 #endif // CPU_H_

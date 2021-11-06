@@ -3,9 +3,9 @@
 
 #include <em6502.h>
 
-#define ADM_DECL(m) u16 adm_##m(struct nes *em)
+#define ADM_DECL(m) u16 adm_##m(struct cpu *cpu)
 
-typedef u16 (*admcall) (struct nes *em);
+typedef u16 (*admcall) (struct cpu *cpu);
 
 #define ADDR_ACC 0x01
 #define ADDR_ABS 0x02

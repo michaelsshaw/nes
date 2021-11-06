@@ -1,15 +1,15 @@
-#include <stdio.h>
+#include <cpu.h>
+
 #include <addrmodes.h>
+#include <stdio.h>
 
-#include "nes.h"
-
-#define CPU em->cpu
+#define CPU cpu
 #define PC        CPU->PC
 #define AC        CPU->A
 #define X         CPU->X
 #define Y         CPU->Y
-#define MEM(a)    cpu_read(em, a)
-#define MEMSET(a) cpu_write(em, a)
+#define MEM(a)    cpu_read(cpu, a)
+#define MEMSET(a) cpu_write(cpu, a)
 #define MEMS(a)   CPU->mem[a]; // silent mode shhhh
 #define CYCLE     CPU->cycles += 1
 
