@@ -27,7 +27,7 @@ struct nes
     struct cpu *cpu;
     struct ppu *ppu;
 
-    struct
+    struct cartridge
     {
         u8 mapper;
         u8 s_prg_rom_16;
@@ -38,6 +38,8 @@ struct nes
     } cartridge;
 
     void **mappers;
+
+    int offs;
 };
 
 void

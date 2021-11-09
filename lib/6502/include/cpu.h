@@ -42,13 +42,22 @@ struct cpu
     u8  cycles;
     u8  addrmode;
 
+    u8 pmaset;
+    
+    u8 rdonly;
+
     void *fw;
-    void *callback;
+    void *memcallback;
+    void *postmemaccess;
 };
 typedef u8 *(*cpucallback)(struct cpu *cpu, u16);
+typedef void *(*postmemaccess)(struct cpu *cpu, u16 addr, u8 *override);
 
 u8 *
 cpu_default_callback(struct cpu *cpu, u16 addr);
+
+void
+cpu_set_postmemaccess(struct cpu *cpu, void *func);
 
 void
 cpu_push(struct cpu *cpu, u8 val);

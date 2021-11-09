@@ -35,7 +35,9 @@
 
 struct ppu
 {
-    u8 *mem;
+    u8 *vram;
+
+    u32 *(pattern_tables_pix[2]);
 
     struct registers
     {
@@ -58,9 +60,28 @@ struct ppu
     u16 reg_shift_2;
 
     u16 cycleno;
+
+    u32 pal[0x40];
+
+    struct nes *fw;
 };
 
 void
-ppu_touch(struct nes *em, u16 addr);
+ppu_touch(struct nes *nes, u16 addr, int rdonly);
+
+void
+ppu_init(struct ppu *ppu);
+
+void
+ppu_free(struct ppu *ppu);
+
+u32 *
+ppu_get_patterntable(struct ppu *ppu, u8 i, u8 pal);
+
+u8
+ppu_read(struct ppu *ppu, u16 addr);
+
+void
+ppu_write(struct ppu *ppu, u16 addr, u8 val);
 
 #endif // NES_PPU_H_

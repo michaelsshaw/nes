@@ -6,7 +6,7 @@
 #include <nes.h>
 #include "ppu.h"
 
-#include "mappers/mapper.h"
+#include "mapper.h"
 
 #define CPU    cpu
 #define PC     CPU->PC
@@ -40,9 +40,18 @@ cpu_get_mempointer(struct cpu *cpu, u16 addr)
     {
         u8 *p = (u8 *)&em->ppu->registers;
         p += (addr & 0x0007);
-        // ppu_touch(em, (addr & 0x0007));
         return p;
     }
 
     return MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU);
+}
+
+void
+cpu_postmemaccess(struct cpu *cpu, u16 addr, u8 *override)
+{
+    struct nes *em = (struct nes *)cpu->fw;
+    IFINRANGE(addr, 0x2000, 0x3FFF) //
+    {
+        ppu_touch(em, (0x2000 + (addr & 0x0007)), cpu->rdonly);
+    }
 }

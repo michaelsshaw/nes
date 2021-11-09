@@ -8,23 +8,20 @@
 #include "ppu.h"
 #include "util.h"
 #include "nescpu.h"
+#include "mapper.h"
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#include "mappers/mapper.h"
-
 #define ASPECT (16 / 15)
+#define ALTN(_n) ((_n) = (_n) == 0 ? 1 : 0)
 
 struct nes *NES;
 
 int echooff = 1;
 
 void
-mappers_init()
-{
-    MAP_DECL(00);
-}
+mappers_init();
 
 void
 nes_window_init(SDL_Window **win, SDL_Renderer **ren)
@@ -47,8 +44,8 @@ nes_window_init(SDL_Window **win, SDL_Renderer **ren)
 void
 nes_window_loop(SDL_Window *window, SDL_Renderer *renderer, struct nes *nes)
 {
-    const int tw = 256;
-    const int th = 240;
+    const int tw = 128;
+    const int th = 128;
     const int ts = tw * th;
 
     u32 *pixels = malloc(ts * 4);
@@ -60,6 +57,10 @@ nes_window_loop(SDL_Window *window, SDL_Renderer *renderer, struct nes *nes)
 
     SDL_Event ev;
     int       i = 0;
+
+    u8 pt = 0;
+    u32 *p2 = ppu_get_patterntable(nes->ppu, pt, 0);
+
     for (;;)
     {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -71,19 +72,22 @@ nes_window_loop(SDL_Window *window, SDL_Renderer *renderer, struct nes *nes)
             {
                 goto out;
             }
+            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_a)
+            {
+                p2 = ppu_get_patterntable(nes->ppu, ALTN(pt), 0);
+            }
         }
 
-        SDL_UpdateTexture(texture, NULL, pixels, tw * 4);
+        SDL_UpdateTexture(texture, NULL, p2, tw * 4);
 
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
     }
 
 out:
+    ppu_free(nes->ppu);
     free(nes->cpu->mem);
-    free(nes->ppu->mem);
     free(nes->cpu);
-    free(nes->ppu);
     free(nes->mappers);
     free(nes);
 
@@ -95,25 +99,21 @@ out:
 int
 main(int argc, char **argv)
 {
-
+    // *******************
+    // EMULATOR & CPU INIT
+    // *******************
     NES           = malloc(sizeof(struct nes));
     NES->cpu      = malloc(sizeof(struct cpu));
     NES->ppu      = malloc(sizeof(struct ppu));
     NES->cpu->mem = malloc(0xFFFF);
-    NES->ppu->mem = malloc(0x4000);
     NES->mappers  = malloc(0xFF * sizeof(void *));
+    NES->offs     = 0;
 
     struct nes *nes = NES;
-    nes->cpu->fw    = nes;
     cpu_set_memcallback(nes->cpu, cpu_get_mempointer);
 
-    mappers_init();
-
-    SDL_Window *  window;
-    SDL_Renderer *renderer;
-
-    nes_window_init(&window, &renderer);
-    nes_window_loop(window, renderer, nes);
+    nes->cpu->fw = nes;
+    nes->ppu->fw = nes;
 
     if (argc != 2)
     {
@@ -121,12 +121,14 @@ main(int argc, char **argv)
         return 1;
     }
 
-    memset(nes->cpu, 0, sizeof(struct cpu));
     memset(nes->cpu->mem, 0, MEM_SIZE);
 
-    cpu_reset(nes->cpu);
+    mappers_init();
+    ppu_init(nes->ppu);
 
+    // ********
     // LOAD ROM
+    // ********
 
     struct
     {
@@ -163,11 +165,14 @@ main(int argc, char **argv)
     switch (filetype)
     {
         case 1:
+
             nes->cartridge.s_prg_rom_16 = header_rom.s_prg_rom_16;
             nes->cartridge.s_chr_rom_8  = header_rom.s_chr_rom_8;
 
             int sprg = nes->cartridge.s_prg_rom_16 * 0x4000;
             int schr = nes->cartridge.s_chr_rom_8 * 0x2000;
+
+            printf("%d %d\n", sprg, schr);
 
             nes->cartridge.chr = malloc(schr);
             nes->cartridge.prg = malloc(sprg);
@@ -180,8 +185,28 @@ main(int argc, char **argv)
         default:
             break;
     }
+            
 
     fclose(file);
+
+    // ************
+    // START WINDOW
+    // ************
+
+    SDL_Window   *window;
+    SDL_Renderer *renderer;
+
+    for(int i = 0x3F01; i < 0x3F20; i++)
+    {
+        int col = rand() * rand();
+        col *= 0x40;
+        col /= RAND_MAX;
+        col /= RAND_MAX;
+        nes->ppu->vram[i] = (u8) col;
+    }
+
+    nes_window_init(&window, &renderer);
+    nes_window_loop(window, renderer, nes);
 
     return 0;
 }

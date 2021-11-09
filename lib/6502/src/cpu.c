@@ -38,9 +38,16 @@ cpu_default_callback(struct cpu *cpu, u16 addr)
 }
 
 void
+cpu_set_postmemaccess(struct cpu *cpu, void *func)
+{
+    CPU->pmaset        = 1;
+    CPU->postmemaccess = func;
+}
+
+void
 cpu_set_memcallback(struct cpu *cpu, void *func)
 {
-    CPU->callback = func;
+    CPU->memcallback = func;
 }
 
 void
@@ -60,18 +67,34 @@ cpu_pop(struct cpu *cpu)
 u8
 cpu_read(struct cpu *cpu, u16 addr)
 {
-    cpucallback callback = (cpucallback)cpu->callback;
+    cpucallback   callback = (cpucallback)cpu->memcallback;
+    postmemaccess pma      = (postmemaccess)cpu->postmemaccess;
+    u8           *mem      = (callback(cpu, addr));
     CYCLE;
-    return *(callback(cpu, addr));
+    
+    cpu->rdonly = 1;
+    if (cpu->pmaset == 1)
+    {
+        pma(cpu, addr, mem);
+    }
+
+    return *mem;
 }
 
 void
 cpu_write(struct cpu *cpu, u16 addr, u8 val)
 {
-    cpucallback callback = (cpucallback)cpu->callback;
-    u8 *        mem      = (callback(cpu, addr));
+    cpucallback   callback = (cpucallback)cpu->memcallback;
+    postmemaccess pma      = (postmemaccess)cpu->postmemaccess;
+    u8           *mem      = (callback(cpu, addr));
     CYCLE;
 
+    cpu->rdonly = 0;
+    if (cpu->pmaset == 1)
+    {
+        pma(cpu, addr, mem);
+    }
+    
     *mem = val;
 }
 
