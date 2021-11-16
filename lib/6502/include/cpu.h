@@ -47,17 +47,14 @@ struct cpu
     u8 rdonly;
 
     void *fw;
-    void *memcallback;
-    void *postmemaccess;
+    void *cpu_write;
+    void *cpu_read;
+
+
+    int echooff;
 };
-typedef u8 *(*cpucallback)(struct cpu *cpu, u16);
-typedef void *(*postmemaccess)(struct cpu *cpu, u16 addr, u8 *override);
-
-u8 *
-cpu_default_callback(struct cpu *cpu, u16 addr);
-
-void
-cpu_set_postmemaccess(struct cpu *cpu, void *func);
+typedef u8 *(*f_cpu_read)(struct cpu *cpu, u16 addr);
+typedef void *(*f_cpu_write)(struct cpu *cpu, u16 addr, u8 val);
 
 void
 cpu_push(struct cpu *cpu, u8 val);

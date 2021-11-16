@@ -25,7 +25,6 @@ INS_DECL(adc) //
 
     u8 m = MEM(addr);
 
-    noprintf("-- (%02x + %02x)", A, m);
     if (invert)
     {
         invert = 0;
@@ -236,7 +235,7 @@ INS_DECL(cmp) //
 {
     u8 m = MEM(addr);
     u8 a = A - m;
-    noprintf(" --- (EXP: %02x, VAL: %02x)", m, A);
+    // noprintf(" --- (EXP: %02x, VAL: %02x)", m, A);
     SETFLAGC(CPU, FLAG_N, NEG8(a));
     SETFLAGC(CPU, FLAG_Z, A == m);
     SETFLAGC(CPU, FLAG_C, A >= m);

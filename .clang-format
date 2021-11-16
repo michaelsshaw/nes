@@ -7,7 +7,7 @@ AlignConsecutiveDeclarations: 'true'
 AlignOperands: 'true'
 AlignTrailingComments: 'true'
 BreakBeforeBraces: Allman
-TabWidth: '4'
+TabWidth: '8'
 IndentWidth: '4'
 PointerAlignment: Right
 SortIncludes: false

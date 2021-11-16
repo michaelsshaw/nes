@@ -14,12 +14,12 @@ long long FREQ = 10000000000000L;
 
 int chlast;
 
-int echooff   =1;
+int cpu_echooff = 0;
 
 void
 noprintf(char *s, ...)
 {
-    if (!echooff)
+    if (!cpu_echooff)
     {
         va_list argptr;
         va_start(argptr, s);
@@ -28,16 +28,10 @@ noprintf(char *s, ...)
     }
 }
 
-void
-intr()
-{
-    echooff = 0;
-}
-
 
 // MAIN FUNCTION
 // generally not used as this is intended as a library
-int
+/*int
 main(int argc, char **argv)
 {
 
@@ -52,7 +46,6 @@ main(int argc, char **argv)
     EM->cpu = malloc(sizeof(struct cpu));
     EM->cpu->mem = malloc(MEM_SIZE);
 
-    cpu_set_memcallback(EM->cpu, cpu_default_callback);
     printf("here!\n");
 
         printf("%d!\n", EM->cpu->mem[0]);
@@ -72,9 +65,6 @@ main(int argc, char **argv)
 printf("post file\n");
 
     struct timespec nowt;
-    long long       last    = 0;
-    long long       now     = 0;
-    long long       billion = 1000000000L;
 
     // INIT SETTINGS
 
@@ -93,15 +83,9 @@ printf("post file\n");
 
     while (1)
     {
-        long long nspercycle = billion / FREQ;
-
-        clock_gettime(CLOCK_REALTIME, &nowt);
-
-        now = ((long long)nowt.tv_sec) * billion + ((long long)nowt.tv_nsec);
 
         // if (now - last > nspercycle)
         {
-            last = now;
             cpu_clock(EM->cpu);
         }
     }
@@ -111,4 +95,4 @@ printf("post file\n");
     free(EM);
 
     return 0;
-}
+}*/

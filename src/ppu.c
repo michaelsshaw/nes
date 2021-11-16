@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include <cpu.h>
+#include <em6502.h>
 
 #include "ppu.h"
 #include "mapper.h"
@@ -11,33 +12,102 @@
 #define PTSETPIXEL(_pt, _x, _y, _val) (_pt)[(_x) + (_y)*128] = (_val)
 #define PCOLREAD(_pal, _pix)                                                   \
     PAL[ppu_read(ppu, 0x3F00 + ((_pal) << 0x02) + _pix) & 0x3F]
-#define RNT(_a)                                                                \
-    if (!(_a))                                                                 \
-    return
+// #define PCOLREAD(_pal, _pix)                                                   \
+//    PAL[_pix & 0x3F + 8]
 
-void
-ppu_touch(struct nes *nes, u16 addr, int rdonly)
+#define RNE(_cond)                                                             \
+    if (!(_cond))                                                              \
+    return 1
+
+#define PPUREG(_ppu, _reg) *((u8 *)(&_ppu->registers + ((_reg)&0x0007)))
+#define CLPPUFLAG(_ppu, _reg, _mask)                                           \
+    PPUREG(_ppu, (_reg)) = PPUREG((_ppu), (_reg)) ^ (_mask)
+
+// TODO: REDO THIS SHIT
+// THIS WAS A TERRIBLE IDEA
+
+u8
+ppu_cpu_read(struct ppu *ppu, u16 addr)
 {
+    addr = addr & 0x0007;
+    u8 r = 0x00;
     switch (addr)
     {
-        case PPUCTRL:
-            RNT(rdonly);
+        case 0x0000:
             break;
-        case PPUMASK:
+        case 0x0001:
             break;
-        case PPUSTATUS:
+        case 0x0002:
+            r = (ppu->registers.ppustatus | 0xE0) | (ppu->data & 0x1F);
+            CLPPUFLAG(ppu, PPUSTATUS, PPUSTATUS_V);
+            ppu->address_latch = 0;
             break;
-        case OAMADDR:
+        case 0x0003:
             break;
-        case OAMDATA:
+        case 0x0004:
             break;
-        case PPUSCROLL:
+        case 0x0005:
             break;
-        case PPUADDR:
+        case 0x0006:
             break;
-        case PPUDATA:
+        case 0x0007:
+            r         = ppu->data;
+            ppu->data = ppu_read(ppu, ppu->vaddr);
+            if (ppu->vaddr >= 0x3F00)
+                r = ppu->data;
+
+            ppu->vaddr += (PPUREG(ppu, PPUCTRL) & PPUCTRL_I) ? 32 : 1;
             break;
-        default:
+    }
+
+    return r;
+}
+#include <stdio.h>
+
+void
+ppu_cpu_write(struct ppu *ppu, u16 addr, u8 data)
+{
+    addr = addr & 0x0007;
+    u8 r = 0x00;
+    switch (addr)
+    {
+        case 0x0000:
+            ppu->registers.ppuctrl = data;
+            // some more stuff later
+            break;
+        case 0x0001:
+            ppu->registers.ppumask = data;
+            break;
+        case 0x0002:
+        case 0x0003:
+        case 0x0004:
+            break;
+        case 0x0005:
+            if (ppu->cpu_latch == 0)
+            {
+                ppu->fxscroll      = data & 0x07;
+                ppu->address_latch = 1;
+            }
+            else
+            {
+                ppu->address_latch = 0;
+            }
+            break;
+        case 0x0006:
+            if (ppu->address_latch == 0)
+            {
+                ppu->vaddrtemp     = data;
+                ppu->address_latch = 1;
+            }
+            else
+            {
+                ppu->vaddr         = (ppu->vaddrtemp << 0x08) | data;
+                ppu->address_latch = 0;
+            }
+            break;
+        case 0x0007:
+            ppu_write(ppu, ppu->vaddr, data);
+            ppu->vaddr += (PPUREG(ppu, PPUCTRL) & PPUCTRL_I) ? 32 : 1;
             break;
     }
 }
@@ -124,6 +194,11 @@ ppu_get_patterntable(struct ppu *ppu, u8 i, u8 pal)
 }
 
 void
+ppu_clock(struct ppu *ppu)
+{
+}
+
+void
 pal_init(struct ppu *ppu)
 {
     PAL[0x00] = 0xFF545454;
@@ -198,6 +273,17 @@ ppu_init(struct ppu *ppu)
     ppu->vram = malloc(0x4000); // 2kB vram for nametables
 
     FOR(i, 0, 2) ppu->pattern_tables_pix[i] = malloc(0x1000 * 32); //
+
+    ppu->registers.ppuctrl   = 0b00000000;
+    ppu->registers.ppumask   = 0b00000000;
+    ppu->registers.ppustatus = 0b10100000;
+    ppu->registers.oamaddr   = 0b00000000;
+    ppu->registers.ppuscroll = 0b00000000;
+    ppu->registers.ppuaddr   = 0b00000000;
+    ppu->registers.ppudata   = 0b00000000;
+    ppu->registers.oamdata   = 0b00000000;
+
+    ppu->address_latch = 0;
 
     pal_init(ppu);
 }

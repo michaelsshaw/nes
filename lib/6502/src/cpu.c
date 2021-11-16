@@ -38,19 +38,6 @@ cpu_default_callback(struct cpu *cpu, u16 addr)
 }
 
 void
-cpu_set_postmemaccess(struct cpu *cpu, void *func)
-{
-    CPU->pmaset        = 1;
-    CPU->postmemaccess = func;
-}
-
-void
-cpu_set_memcallback(struct cpu *cpu, void *func)
-{
-    CPU->memcallback = func;
-}
-
-void
 cpu_push(struct cpu *cpu, u8 val)
 {
     cpu_write(cpu, 0x0100 | SP, val);
@@ -65,37 +52,31 @@ cpu_pop(struct cpu *cpu)
 }
 
 u8
-cpu_read(struct cpu *cpu, u16 addr)
+cpu_read_default(struct cpu *cpu, u16 addr)
 {
-    cpucallback   callback = (cpucallback)cpu->memcallback;
-    postmemaccess pma      = (postmemaccess)cpu->postmemaccess;
-    u8           *mem      = (callback(cpu, addr));
-    CYCLE;
-    
-    cpu->rdonly = 1;
-    if (cpu->pmaset == 1)
-    {
-        pma(cpu, addr, mem);
-    }
+    return cpu->mem[addr];
+}
 
-    return *mem;
+void
+cpu_write_default(struct cpu *cpu, u16 addr, u8 val)
+{
+    cpu->mem[addr] = val;
 }
 
 void
 cpu_write(struct cpu *cpu, u16 addr, u8 val)
 {
-    cpucallback   callback = (cpucallback)cpu->memcallback;
-    postmemaccess pma      = (postmemaccess)cpu->postmemaccess;
-    u8           *mem      = (callback(cpu, addr));
     CYCLE;
+    f_cpu_write wr = (f_cpu_write)cpu->cpu_write;
+    wr(cpu, addr, val);
+}
 
-    cpu->rdonly = 0;
-    if (cpu->pmaset == 1)
-    {
-        pma(cpu, addr, mem);
-    }
-    
-    *mem = val;
+u8
+cpu_read(struct cpu *cpu, u16 addr)
+{
+    CYCLE;
+    f_cpu_read rd = (f_cpu_read)cpu->cpu_read;
+    return rd(cpu, addr);
 }
 
 void
@@ -107,24 +88,24 @@ cpu_clock(struct cpu *cpu)
     if (CYCLES == 0)
     {
         u8 opc = cpu_read(cpu, PC);
-        noprintf(
-          "|SP: %02x|A: %02x|X: %02x|Y: %02x| %c%c%c%c%c%c%c%c || 0x%04X| "
-          "0x%02X %s ",
-          SP,
-          A,
-          X,
-          Y,
-          DBG_FLAG(FLAG_N),
-          DBG_FLAG(FLAG_V),
-          DBG_FLAG(FLAG_5),
-          DBG_FLAG(FLAG_B),
-          DBG_FLAG(FLAG_D),
-          DBG_FLAG(FLAG_I),
-          DBG_FLAG(FLAG_Z),
-          DBG_FLAG(FLAG_C),
-          PC,
-          opc,
-          debug_codes[opc]);
+        // noprintf(
+        //   "|SP: %02x|A: %02x|X: %02x|Y: %02x| %c%c%c%c%c%c%c%c || 0x%04X| "
+        //   "0x%02X %s ",
+        //   SP,
+        //   A,
+        //   X,
+        //   Y,
+        //   DBG_FLAG(FLAG_N),
+        //   DBG_FLAG(FLAG_V),
+        //   DBG_FLAG(FLAG_5),
+        //   DBG_FLAG(FLAG_B),
+        //   DBG_FLAG(FLAG_D),
+        //   DBG_FLAG(FLAG_I),
+        //   DBG_FLAG(FLAG_Z),
+        //   DBG_FLAG(FLAG_C),
+        //   PC,
+        //   opc,
+        //   debug_codes[opc]);
 
         admcall callback_adm = (admcall)codes[opc * 2 + 1];
         inscall callback_ins = (inscall)codes[opc * 2];
@@ -136,7 +117,7 @@ cpu_clock(struct cpu *cpu)
             u16 addr = callback_adm(cpu);
             callback_ins(cpu, addr);
         }
-        noprintf("\n");
+        // noprintf("\n");
 
         cycles++;
     }

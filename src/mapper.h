@@ -1,6 +1,8 @@
 #ifndef NES_MAPPER_H_
 #define NES_MAPPER_H_
 
+/*! @file mapper.h */
+
 #include <nes.h>
 #include <cpu.h>
 

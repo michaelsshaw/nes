@@ -9,19 +9,22 @@ include_directories(lib/6502/include)
 
 project(project_NES)
 
+
 file(GLOB_RECURSE SRCS src/*.c)
 
 add_executable(NES ${SRCS})
 
 target_link_libraries(NES m)
 if(NOT WIN32)
-    target_link_libraries(NES dl)
-    find_package(SDL2 REQUIRED)
+target_link_libraries(NES dl)
+find_package(SDL2 REQUIRED)
 endif(NOT WIN32)
 
 if(WIN32)
     add_subdirectory(lib/SDL2)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwinpthread")
 endif(WIN32)
+
 add_subdirectory(lib/6502)
 target_link_libraries(NES SDL2 ${SDL2_LIBRARIES})
 target_link_libraries(NES 6502 ${6502_LIBRARIES})

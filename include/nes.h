@@ -1,7 +1,21 @@
 #ifndef NES_NES_H_
 #define NES_NES_H_
 
+/*! @file nes.h */
+
 #include <cpu.h>
+
+/*!
+ * @mainpage NES
+ *
+ * This is the documentation for a NES emulator written by Michael Shaw.
+ * 
+ * The program begins in the #main function in nes.c
+ *
+ *
+ * @see nes_cpu_read()
+ * @see nes_cpu_write()
+ */
 
 /*
 
@@ -22,12 +36,16 @@
 
 struct ppu;
 
+/*!
+ * @struct nes
+ * Data structure representation of the entire emulation
+ */
 struct nes
 {
-    struct cpu *cpu;
-    struct ppu *ppu;
+    struct cpu *cpu; //!< 6502 CPU data structure
+    struct ppu *ppu; //!< PPU structure
 
-    struct cartridge
+    struct
     {
         u8 mapper;
         u8 s_prg_rom_16;
@@ -35,9 +53,9 @@ struct nes
 
         u8 *prg;
         u8 *chr;
-    } cartridge;
+    } cartridge; //!< Contains all ROM cartridge data
 
-    void **mappers;
+    void **mappers; //!< Function array for memory mappers
 
     int offs;
 };
