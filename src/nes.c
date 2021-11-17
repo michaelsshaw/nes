@@ -31,6 +31,11 @@
 #define NS_CLOCK              ONE_BILLION / NES_CPU_CLOCKS_SECOND
 #define NS_FRAME              ONE_BILLION / 60
 
+#define RECT_DECL(_name, _x, _y, _w, _h)                                       \
+    struct SDL_Rect nesrect_##_name = {                                        \
+        .x = (_x), .y = (_y), .w = (_w), .h = (_h)                             \
+    }
+
 struct nes *NES;
 
 void
@@ -70,11 +75,11 @@ nes_game_loop(void *in)
     for (;;)
     {
         now = nes_time_get();
-        if(now - lastlog >= ONE_BILLION)
+        if (now - lastlog >= ONE_BILLION)
         {
             printf("Ran %lld cycles\n", cyclecount);
             cyclecount = 0;
-            lastlog = now;
+            lastlog    = now;
         }
 
         if (now - last < NS_CLOCK)
@@ -102,9 +107,19 @@ nes_game_loop(void *in)
 void
 nes_window_loop(struct nes *nes)
 {
-    const int tw = 128;
-    const int th = 128;
-    const int ts = tw * th;
+    int       padding = 20;
+    const int w_pt    = 128;
+    const int h_pt    = 128;
+    const int ts      = w_pt * h_pt;
+
+    int WINDOW_HEIGHT = 900;
+    int NES_OUT_WIDTH = WINDOW_HEIGHT * ASPECT;
+    int WINDOW_WIDTH  = NES_OUT_WIDTH //
+                       + padding      // nesview padding;
+                       + w_pt         // width of pattern table 1
+                       + padding      // padding after pt1
+                       + w_pt         // width of pt2
+                       + padding;     // padding after pt2
 
     /*
      *
@@ -116,38 +131,68 @@ nes_window_loop(struct nes *nes)
     SDL_Window *window = SDL_CreateWindow("SDL2",
                                           SDL_WINDOWPOS_UNDEFINED,
                                           SDL_WINDOWPOS_UNDEFINED,
-                                          1200,
-                                          1200 / ASPECT,
+                                          WINDOW_WIDTH,
+                                          WINDOW_HEIGHT,
                                           SDL_WINDOW_SHOWN);
 
     SDL_Renderer *renderer =
       SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    /*
-     *
-     * Create the pixel array, texture and event
-     * Fill pixel array with the pattern table
-     *
-     */
-    u32 *pixels = malloc(ts * 4);
-
-    memset(pixels, 0x00, ts * 4);
-
-    SDL_Texture *texture = SDL_CreateTexture(
-      renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, tw, th);
-
     SDL_Event ev;
     int       i = 0;
 
-    u8   pt = 0;
-    u32 *p2 = ppu_get_patterntable(nes->ppu, pt, 0);
-    SDL_UpdateTexture(texture, NULL, p2, tw * 4);
+    /*
+     *
+     * IMPORTANT
+     *
+     * Pixel and SDL_Texture data
+     *
+     * IMPORTANT
+     *
+     */
+    u32 *pixels = malloc(ts * 4);
+    memset(pixels, 0x00, ts * 4);
 
-    u32 clockcount = 0;
-    u8  pause      = 1;
+    //
+    // First Pattern Table
+    //
+    SDL_Texture *tex_pt0 = SDL_CreateTexture(renderer,
+                                             SDL_PIXELFORMAT_ARGB8888,
+                                             SDL_TEXTUREACCESS_STREAMING,
+                                             w_pt,
+                                             h_pt);
+
+    u32 *pix_pt0;
+    RECT_DECL(pt0,
+              NES_OUT_WIDTH + padding,        //
+              WINDOW_HEIGHT - h_pt - padding, //
+              w_pt,                           //
+              h_pt);                          //
+
+    SDL_Texture *tex_pt1 = SDL_CreateTexture(renderer,
+                                             SDL_PIXELFORMAT_ARGB8888,
+                                             SDL_TEXTUREACCESS_STREAMING,
+                                             w_pt,
+                                             h_pt);
+
+    u32 *pix_pt1;
+    RECT_DECL(pt1,
+              WINDOW_WIDTH - w_pt - padding,  //
+              WINDOW_HEIGHT - h_pt - padding, //
+              w_pt,                           //
+              h_pt);                          //
+
+    /**
+    // Second thread for actual NES operation
+    // The current thread is for SDL only
+    **/
 
     SDL_Thread *thread =
       SDL_CreateThread(nes_game_loop, "NES_GAME_LOOP", (void *)nes);
+
+    //
+    // Infinite loop timing
+    //
 
     uint64_t last = 0;
     uint64_t now  = 0;
@@ -156,10 +201,10 @@ nes_window_loop(struct nes *nes)
     {
         now = nes_time_get();
 
-        if (now - last < NS_FRAME)
+        if (now - last < NS_CLOCK)
             continue;
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, 80, 190, 190, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
 
         while (SDL_PollEvent(&ev))
@@ -172,21 +217,28 @@ nes_window_loop(struct nes *nes)
             {
                 switch (ev.key.keysym.sym)
                 {
-                    case SDLK_a:
-                        p2 = ppu_get_patterntable(nes->ppu, ALTN(pt), 0);
-                        SDL_UpdateTexture(texture, NULL, p2, tw * 4);
-
-                        break;
-                    case SDLK_p:
-                        ALTN(pause);
-                        break;
                     case SDLK_f:
                         break;
                 }
             }
         }
 
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        //
+        // Update the PT pixels and textures
+        //
+
+        pix_pt0 = ppu_get_patterntable(nes->ppu, 0, 0);
+        SDL_UpdateTexture(tex_pt0, NULL, pix_pt0, w_pt * 4);
+
+        pix_pt1 = ppu_get_patterntable(nes->ppu, 1, 0);
+        SDL_UpdateTexture(tex_pt1, NULL, pix_pt1, w_pt * 4);
+
+        //
+        // Copy the textures to the renderer
+        //
+
+        SDL_RenderCopy(renderer, tex_pt0, NULL, &nesrect_pt0);
+        SDL_RenderCopy(renderer, tex_pt1, NULL, &nesrect_pt1);
         SDL_RenderPresent(renderer);
 
         last = now;

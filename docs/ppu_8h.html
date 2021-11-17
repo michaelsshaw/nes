@@ -182,8 +182,10 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a2da204931ece78c3393a51b548dbaa09"><td class="memItemLeft" align="right" valign="top">u8&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ppu_8h.html#a2da204931ece78c3393a51b548dbaa09">ppu_touch</a> (struct <a class="el" href="nes_8h.html#structnes">nes</a> *<a class="el" href="nes_8h.html#structnes">nes</a>, u16 addr, u8 rdonly, u8 data)</td></tr>
-<tr class="separator:a2da204931ece78c3393a51b548dbaa09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6c14ee4ee1bdff80e1f16083120d1fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ppu_8h.html#ab6c14ee4ee1bdff80e1f16083120d1fe">ppu_cpu_write</a> (struct <a class="el" href="ppu_8h.html#structppu">ppu</a> *<a class="el" href="ppu_8h.html#structppu">ppu</a>, u16 addr, u8 data)</td></tr>
+<tr class="separator:ab6c14ee4ee1bdff80e1f16083120d1fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2031441973c5f4f5983245c7733205e9"><td class="memItemLeft" align="right" valign="top">u8&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ppu_8h.html#a2031441973c5f4f5983245c7733205e9">ppu_cpu_read</a> (struct <a class="el" href="ppu_8h.html#structppu">ppu</a> *<a class="el" href="ppu_8h.html#structppu">ppu</a>, u16 addr)</td></tr>
+<tr class="separator:a2031441973c5f4f5983245c7733205e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a194c3fc0d46b7103ed081a8cb59c1b02"><td class="memItemLeft" align="right" valign="top"><a id="a194c3fc0d46b7103ed081a8cb59c1b02" name="a194c3fc0d46b7103ed081a8cb59c1b02"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ppu_init</b> (struct <a class="el" href="ppu_8h.html#structppu">ppu</a> *<a class="el" href="ppu_8h.html#structppu">ppu</a>)</td></tr>
 <tr class="separator:a194c3fc0d46b7103ed081a8cb59c1b02"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,7 +302,7 @@ vaddr</td>
 <td class="fielddoc">
 Address written by the CPU at PPUADDR. </td></tr>
 <tr><td class="fieldtype">
-<a id="a745add5a5031f4b72effccded63b2409" name="a745add5a5031f4b72effccded63b2409"></a>u16</td>
+<a id="a60273d38a7f56bad6706bb5df57c6639" name="a60273d38a7f56bad6706bb5df57c6639"></a>u8</td>
 <td class="fieldname">
 vaddrtemp</td>
 <td class="fielddoc">
@@ -334,49 +336,49 @@ Byte array containing the nametables. </td></tr>
 <td class="fieldname">
 oamaddr</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2003. </td></tr>
 <tr><td class="fieldtype">
 <a id="a205bdd1f53dafa3727876d7855cd5c23" name="a205bdd1f53dafa3727876d7855cd5c23"></a>u8</td>
 <td class="fieldname">
 oamdata</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2004. </td></tr>
 <tr><td class="fieldtype">
 <a id="ac315640c46057c2351b21a15f0821142" name="ac315640c46057c2351b21a15f0821142"></a>u8</td>
 <td class="fieldname">
 ppuaddr</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2006. </td></tr>
 <tr><td class="fieldtype">
 <a id="a11b9e1b2c7ee314803244b05f5343909" name="a11b9e1b2c7ee314803244b05f5343909"></a>u8</td>
 <td class="fieldname">
 ppuctrl</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2000. </td></tr>
 <tr><td class="fieldtype">
 <a id="abd11306810ab993bf09c982974f7afbc" name="abd11306810ab993bf09c982974f7afbc"></a>u8</td>
 <td class="fieldname">
 ppudata</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2007. </td></tr>
 <tr><td class="fieldtype">
 <a id="abe7d1a14efd243eacdd8a88bed7b12e0" name="abe7d1a14efd243eacdd8a88bed7b12e0"></a>u8</td>
 <td class="fieldname">
 ppumask</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2001. </td></tr>
 <tr><td class="fieldtype">
 <a id="a58085ed39d268eee728375fd24baf175" name="a58085ed39d268eee728375fd24baf175"></a>u8</td>
 <td class="fieldname">
 ppuscroll</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2005. </td></tr>
 <tr><td class="fieldtype">
 <a id="a8198afe2ae30dd1e080c9046fffbc4c0" name="a8198afe2ae30dd1e080c9046fffbc4c0"></a>u8</td>
 <td class="fieldname">
 ppustatus</td>
 <td class="fielddoc">
-</td></tr>
+CPU address $2002. </td></tr>
 </table>
 
 </div>
@@ -397,13 +399,94 @@ ppustatus</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Writes to somewhere in the PPU's addressable range</p>
+<p >Runs a single clock cycle for the PPU</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">ppu</td><td></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a2031441973c5f4f5983245c7733205e9" name="a2031441973c5f4f5983245c7733205e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2031441973c5f4f5983245c7733205e9">&#9670;&nbsp;</a></span>ppu_cpu_read()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">u8 ppu_cpu_read </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="ppu_8h.html#structppu">ppu</a> *&#160;</td>
+          <td class="paramname"><em>ppu</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">u16&#160;</td>
+          <td class="paramname"><em>addr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Allows the CPU to read one of the exposed registers in the cpu address range $2000-$3FFF (mirrored every 8 bits to $2000-2007)</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ppu</td><td></td></tr>
+    <tr><td class="paramname">addr</td><td>Address of the PPU register to write to</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="ppu_8h.html#ab6c14ee4ee1bdff80e1f16083120d1fe">ppu_cpu_write</a> </dd></dl>
+
+</div>
+</div>
+<a id="ab6c14ee4ee1bdff80e1f16083120d1fe" name="ab6c14ee4ee1bdff80e1f16083120d1fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6c14ee4ee1bdff80e1f16083120d1fe">&#9670;&nbsp;</a></span>ppu_cpu_write()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ppu_cpu_write </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="ppu_8h.html#structppu">ppu</a> *&#160;</td>
+          <td class="paramname"><em>ppu</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">u16&#160;</td>
+          <td class="paramname"><em>addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">u8&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Allows the CPU to write to one of the exposed registers in the cpu address range $2000-$3FFF (mirrored every 8 bits to $2000-2007)</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ppu</td><td></td></tr>
+    <tr><td class="paramname">addr</td><td>Address of the PPU register to write to </td></tr>
+    <tr><td class="paramname">data</td><td>Data to write to the PPU</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="ppu_8h.html#a2031441973c5f4f5983245c7733205e9">ppu_cpu_read</a> </dd></dl>
 
 </div>
 </div>
@@ -485,57 +568,6 @@ ppustatus</td>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>8-bit value at memory location addr </dd></dl>
-
-</div>
-</div>
-<a id="a2da204931ece78c3393a51b548dbaa09" name="a2da204931ece78c3393a51b548dbaa09"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2da204931ece78c3393a51b548dbaa09">&#9670;&nbsp;</a></span>ppu_touch()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">u8 ppu_touch </td>
-          <td>(</td>
-          <td class="paramtype">struct <a class="el" href="nes_8h.html#structnes">nes</a> *&#160;</td>
-          <td class="paramname"><em>nes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">u16&#160;</td>
-          <td class="paramname"><em>addr</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">u8&#160;</td>
-          <td class="paramname"><em>rdonly</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">u8&#160;</td>
-          <td class="paramname"><em>data</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p >Notifies the PPU that one of its registers has been accessed by the CPU by through the memory addresses $2000-$3FFF</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">nes</td><td>NES data structure containing the CPU and PPU </td></tr>
-    <tr><td class="paramname">addr</td><td>The address accessed by the CPU, masked between $2000-$2007 </td></tr>
-    <tr><td class="paramname">rdonly</td><td>Whether or not this was a read or write access </td></tr>
-    <tr><td class="paramname">data</td><td>If this was a write, the data written to the register</td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>1 if the operation should be blocked, 0 if allowed </dd></dl>
 
 </div>
 </div>

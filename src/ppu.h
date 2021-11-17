@@ -6,32 +6,32 @@
 #include <cpu.h>
 #include <nes.h>
 
-#define PPUCTRL     0x2000
-#define PPUMASK     0x2001
-#define PPUSTATUS   0x2002
-#define OAMADDR     0x2003
-#define OAMDATA     0x2004
-#define PPUSCROLL   0x2005
-#define PPUADDR     0x2006
-#define PPUDATA     0x2007
-#define OAMDMA      0x4014 // ppu registers locations in cpu ram
+#define PPUCTRL   0x2000
+#define PPUMASK   0x2001
+#define PPUSTATUS 0x2002
+#define OAMADDR   0x2003
+#define OAMDATA   0x2004
+#define PPUSCROLL 0x2005
+#define PPUADDR   0x2006
+#define PPUDATA   0x2007
+#define OAMDMA    0x4014 // ppu registers locations in cpu ram
 
-#define PPUCTRL_V   0x80   //
-#define PPUCTRL_P   0x40   //
-#define PPUCTRL_H   0x20   //
-#define PPUCTRL_B   0x10   //
-#define PPUCTRL_S   0x08   //
-#define PPUCTRL_I   0x04   //
-#define PPUCTRL_NN  0x03   //
-#define PPUMASK_BGR 0xE0   //
-#define PPUMASK_s   0x10   //
-#define PPUMASK_b   0x08   //
-#define PPUMASK_M   0x04   //
-#define PPUMASK_m   0x02   //
-#define PPUMASK_G   0x01   //
-#define PPUSTATUS_V 0x80   //
-#define PPUSTATUS_S 0x40   //
-#define PPUSTATUS_O 0x20   // Bitmasks for ppu flags
+#define PPUCTRL_V   0x80 //
+#define PPUCTRL_P   0x40 //
+#define PPUCTRL_H   0x20 //
+#define PPUCTRL_B   0x10 //
+#define PPUCTRL_S   0x08 //
+#define PPUCTRL_I   0x04 //
+#define PPUCTRL_NN  0x03 //
+#define PPUMASK_BGR 0xE0 //
+#define PPUMASK_s   0x10 //
+#define PPUMASK_b   0x08 //
+#define PPUMASK_M   0x04 //
+#define PPUMASK_m   0x02 //
+#define PPUMASK_G   0x01 //
+#define PPUSTATUS_V 0x80 //
+#define PPUSTATUS_S 0x40 //
+#define PPUSTATUS_O 0x20 // Bitmasks for ppu flags
 
 #define PPURMASK(_a) ((_a) == PPUSTATUS ? (0xE0) : 0xFF)
 
@@ -48,22 +48,22 @@ struct ppu
 
     struct
     {
-        u8 ppuctrl;
-        u8 ppumask;
-        u8 ppustatus;
-        u8 oamaddr;
-        u8 oamdata;
-        u8 ppuscroll;
-        u8 ppuaddr;
-        u8 ppudata;
-    } registers; //!< PPU internal 8-bit registers
+        u8 ppuctrl;   //!< CPU address $2000
+        u8 ppumask;   //!< CPU address $2001
+        u8 ppustatus; //!< CPU address $2002
+        u8 oamaddr;   //!< CPU address $2003
+        u8 oamdata;   //!< CPU address $2004
+        u8 ppuscroll; //!< CPU address $2005
+        u8 ppuaddr;   //!< CPU address $2006
+        u8 ppudata;   //!< CPU address $2007
+    } registers;      //!< PPU internal 8-bit registers
 
     u8 cpu_latch;
     u8 address_latch;
     u8 data; //!< Data return from the address in PPUDATA
 
     u16 vaddr;     //!< Address written by the CPU at PPUADDR
-    u8 vaddrtemp; //!< Temporary storage of the upper byte of the address
+    u8  vaddrtemp; //!< Temporary storage of the upper byte of the address
                    //!< written at PPUADDR
     u16 fxscroll;  //!< Fine X scroll
     u8  fstoggle;  //!< Fine scroll toggle
@@ -80,22 +80,27 @@ struct ppu
 };
 
 /*!
- * Notifies the PPU that one of its registers has been accessed by the CPU by
- * through the memory addresses $2000-$3FFF
+ * Allows the CPU to write to one of the exposed registers in the cpu address
+ * range $2000-$3FFF (mirrored every 8 bits to $2000-2007)
  *
- * @param nes NES data structure containing the CPU and PPU
- * @param addr The address accessed by the CPU, masked between $2000-$2007
- * @param rdonly Whether or not this was a read or write access
- * @param data If this was a write, the data written to the register
+ * @param ppu
+ * @param addr Address of the PPU register to write to
+ * @param data Data to write to the PPU
  *
- * @returns 1 if the operation should be blocked, 0 if allowed
+ * @see #ppu_cpu_read
  */
-u8
-ppu_touch(struct nes *nes, u16 addr, u8 rdonly, u8 data);
-
 void
 ppu_cpu_write(struct ppu *ppu, u16 addr, u8 data);
 
+/*!
+ * Allows the CPU to read one of the exposed registers in the cpu address range
+ * $2000-$3FFF (mirrored every 8 bits to $2000-2007)
+ *
+ * @param ppu
+ * @param addr Address of the PPU register to write to
+ *
+ * @see #ppu_cpu_write
+ */
 u8
 ppu_cpu_read(struct ppu *ppu, u16 addr);
 
@@ -139,7 +144,7 @@ void
 ppu_write(struct ppu *ppu, u16 addr, u8 val);
 
 /*!
- * Writes to somewhere in the PPU's addressable range
+ * Runs a single clock cycle for the PPU
  *
  * @param ppu
  */

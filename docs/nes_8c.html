@@ -116,6 +116,20 @@ Macros</h2></td></tr>
 <tr class="memitem:afe6037e46e688218e051d237b543df03"><td class="memItemLeft" align="right" valign="top"><a id="afe6037e46e688218e051d237b543df03" name="afe6037e46e688218e051d237b543df03"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>ALTN</b>(_n)&#160;&#160;&#160;((_n) = (_n) == 0 ? 1 : 0)</td></tr>
 <tr class="separator:afe6037e46e688218e051d237b543df03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af05eba65a3d4d0547dba7e69e440db2c"><td class="memItemLeft" align="right" valign="top"><a id="af05eba65a3d4d0547dba7e69e440db2c" name="af05eba65a3d4d0547dba7e69e440db2c"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>ONE_BILLION</b>&#160;&#160;&#160;1000000000</td></tr>
+<tr class="separator:af05eba65a3d4d0547dba7e69e440db2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8186ab0c5c2ef0544a9d1a23ecb6a76b"><td class="memItemLeft" align="right" valign="top"><a id="a8186ab0c5c2ef0544a9d1a23ecb6a76b" name="a8186ab0c5c2ef0544a9d1a23ecb6a76b"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NES_CPU_CLOCKS_SECOND</b>&#160;&#160;&#160;1790000</td></tr>
+<tr class="separator:a8186ab0c5c2ef0544a9d1a23ecb6a76b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb16bd2a80b95beff57b2e3d63d49c60"><td class="memItemLeft" align="right" valign="top"><a id="aeb16bd2a80b95beff57b2e3d63d49c60" name="aeb16bd2a80b95beff57b2e3d63d49c60"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NS_CLOCK</b>&#160;&#160;&#160;ONE_BILLION / NES_CPU_CLOCKS_SECOND</td></tr>
+<tr class="separator:aeb16bd2a80b95beff57b2e3d63d49c60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ecca9101a7a76721ef9d3522b2e00dd"><td class="memItemLeft" align="right" valign="top"><a id="a5ecca9101a7a76721ef9d3522b2e00dd" name="a5ecca9101a7a76721ef9d3522b2e00dd"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NS_FRAME</b>&#160;&#160;&#160;ONE_BILLION / 60</td></tr>
+<tr class="separator:a5ecca9101a7a76721ef9d3522b2e00dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee89aa22d08244cd4ce5f301f7453197"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#aee89aa22d08244cd4ce5f301f7453197">RECT_DECL</a>(_name,  _x,  _y,  _w,  _h)</td></tr>
+<tr class="separator:aee89aa22d08244cd4ce5f301f7453197"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -124,6 +138,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>mappers_init</b> ()</
 <tr class="separator:a1e4a6eda8c8b77e8b78baa5b193974b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a09fd89da825845f6dcc353cbc3b75015"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#a09fd89da825845f6dcc353cbc3b75015">nes_time_get</a> ()</td></tr>
 <tr class="separator:a09fd89da825845f6dcc353cbc3b75015"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d731f05cc2df7c0eed648a694bd6f37"><td class="memItemLeft" align="right" valign="top"><a id="a5d731f05cc2df7c0eed648a694bd6f37" name="a5d731f05cc2df7c0eed648a694bd6f37"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>nes_game_loop</b> (void *in)</td></tr>
+<tr class="separator:a5d731f05cc2df7c0eed648a694bd6f37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b9d28b52191e7fc5270b408ee08ffb3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#a8b9d28b52191e7fc5270b408ee08ffb3">nes_window_loop</a> (struct <a class="el" href="nes_8h.html#structnes">nes</a> *<a class="el" href="nes_8h.html#structnes">nes</a>)</td></tr>
 <tr class="separator:a8b9d28b52191e7fc5270b408ee08ffb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3c04138a5bfe5d72780bb7e82a18e627"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a> (int argc, char **argv)</td></tr>
@@ -135,6 +152,56 @@ Variables</h2></td></tr>
 struct <a class="el" href="nes_8h.html#structnes">nes</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>NES</b></td></tr>
 <tr class="separator:a4cc7cee2aa2e49b4ac8c87a86c2e86ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="aee89aa22d08244cd4ce5f301f7453197" name="aee89aa22d08244cd4ce5f301f7453197"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee89aa22d08244cd4ce5f301f7453197">&#9670;&nbsp;</a></span>RECT_DECL</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define RECT_DECL</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_name, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_x, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_y, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_w, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_h&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keyword">struct </span>SDL_Rect nesrect_##_name = {                                        \</div>
+<div class="line">        .x = (_x), .y = (_y), .w = (_w), .h = (_h)                             \</div>
+<div class="line">    }</div>
+</div><!-- fragment -->
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a3c04138a5bfe5d72780bb7e82a18e627" name="a3c04138a5bfe5d72780bb7e82a18e627"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3c04138a5bfe5d72780bb7e82a18e627">&#9670;&nbsp;</a></span>main()</h2>
@@ -207,6 +274,7 @@ struct <a class="el" href="nes_8h.html#structnes">nes</a> *&#160;</td><td class=
   </table>
   </dd>
 </dl>
+<p >Second thread for actual NES operation The current thread is for SDL only</p>
 
 </div>
 </div>

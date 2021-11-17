@@ -10,6 +10,6 @@ var ppu_8h_structppu =
     [ "registers", "ppu_8h.html#a51a799183a872f5a0469d2c2d393ff30", null ],
     [ "scanline", "ppu_8h.html#aa5bdf0a604d48beb43c651a36f77dfa6", null ],
     [ "vaddr", "ppu_8h.html#a57f885c84824bae45767d20e453d4071", null ],
-    [ "vaddrtemp", "ppu_8h.html#a745add5a5031f4b72effccded63b2409", null ],
+    [ "vaddrtemp", "ppu_8h.html#a60273d38a7f56bad6706bb5df57c6639", null ],
     [ "vram", "ppu_8h.html#a025e53e140c8aba0bde0188133dcef71", null ]
 ];
