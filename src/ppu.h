@@ -33,6 +33,17 @@
 #define PPUSTATUS_S 0x40 //
 #define PPUSTATUS_O 0x20 // Bitmasks for ppu flags
 
+#define PPULOOPY_FY 0x7000
+#define PPULOOPY_Y  0x0800
+#define PPULOOPY_X  0x0400
+#define PPULOOPY_CY 0x03E0
+#define PPULOOPY_CX 0x001F
+
+// Register made by loopy
+// Layout: (0 FFFYXCC CCCVVVVV)
+// Fine y scroll(F), nametable_y(Y), nametable_x(X),
+// coarse_y(C), coarse_x(V)
+
 #define PPURMASK(_a) ((_a) == PPUSTATUS ? (0xE0) : 0xFF)
 
 /*!
@@ -59,24 +70,46 @@ struct ppu
     } registers;      //!< PPU internal 8-bit registers
 
     u8 cpu_latch;
+    u8 nmi;
     u8 address_latch;
     u8 data; //!< Data return from the address in PPUDATA
 
-    u16 vaddr;     //!< Address written by the CPU at PPUADDR
-    u8  vaddrtemp; //!< Temporary storage of the upper byte of the address
-                   //!< written at PPUADDR
-    u16 fxscroll;  //!< Fine X scroll
-    u8  fstoggle;  //!< Fine scroll toggle
+    u16 vaddr;
+    u16 taddr; //!< Address written by the CPU at PPUADDR
+
+    u16 fxscroll; //!< Fine X scroll
+    u8  fstoggle; //!< Fine scroll toggle
 
     u16 reg_shift_1;
     u16 reg_shift_2;
 
-    u16 cycle;    //!< Cycle count
-    u16 scanline; //!< Current scanline in rendering
+    int cycle;    //!< Cycle count
+    int scanline; //!< Current scanline in rendering
 
     u32 pal[0x40]; //!< All 64 colors the NES can display
 
     struct nes *fw; //!< NES data structure that also contains this structure
+
+    u8 bg_id;
+    u8 bg_at;
+    u8 bg_lsb;
+    u8 bg_msb;
+
+    u16 bg_shift_plo;
+    u16 bg_shift_phi;
+    u16 bg_shift_alo;
+    u16 bg_shift_ahi;
+};
+
+/*!
+ * Nametable mirroring enum
+ */
+enum ppumirror
+{
+    MIRROR_HORIZONTAL = 0x2BFF,
+    MIRROR_VERTICAL   = 0x27FF,
+    MIRROR_OS_LO,
+    MIRROR_OS_HI
 };
 
 /*!

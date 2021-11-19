@@ -6,10 +6,11 @@ AlignConsecutiveAssignments: 'true'
 AlignConsecutiveDeclarations: 'true'
 AlignOperands: 'true'
 AlignTrailingComments: 'true'
-BreakBeforeBraces: Allman
-TabWidth: '8'
+BreakBeforeBraces: 'Allman' 
+TabWidth: '4'
 IndentWidth: '4'
 PointerAlignment: Right
 SortIncludes: false
+ColumnLimit: '80'
 ...
 

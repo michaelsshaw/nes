@@ -3,8 +3,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/util/cmake/")
+
 file(GLOB_RECURSE RESS res/*)
 file(COPY ${RESS} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+set(CMAKE_C_FLAGS "-O3 -Wall")
 
 include_directories(include)
 include_directories(lib/SDL2/include)
@@ -18,10 +22,12 @@ file(GLOB_RECURSE SRCS src/*.c)
 add_executable(NES ${SRCS})
 
 target_link_libraries(NES m)
-if(NOT WIN32)
-target_link_libraries(NES dl)
-find_package(SDL2 REQUIRED)
-endif(NOT WIN32)
+if(NOT WIN32 AND NOT APPLE)
+    target_link_libraries(NES dl)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+    
+    find_package(SDL2 REQUIRED)
+endif(NOT WIN32 AND NOT APPLE)
 
 if(WIN32)
     add_subdirectory(lib/SDL2)

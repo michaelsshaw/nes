@@ -24,7 +24,7 @@ MAP_FUNC(00)
     {
         IFINRANGE(addr, 0x0000, 0x1FFF) //
         {
-            //printf("\n%04X\n", addr);
+            // printf("\n%04X\n", addr);
             return nes->cartridge.chr + addr;
         }
     }

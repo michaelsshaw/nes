@@ -5,6 +5,7 @@
 
 #include <nes.h>
 #include "ppu.h"
+#include "util.h"
 
 #include "mapper.h"
 
@@ -19,9 +20,6 @@
 #define CYCLES CPU->cycles
 
 #define DBG_FLAG(flag) GETFLAG(CPU, flag) ? #flag[sizeof(#flag) - 2] : '-'
-
-#define INRANGE(_n, _a, _b)   (((_n) >= (_a)) && ((_n) <= (_b)))
-#define IFINRANGE(_m, _c, _d) if (INRANGE((_m), (_c), (_d)))
 
 long long cycles = 0;
 
@@ -79,10 +77,7 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
         ppu_cpu_write(em->ppu, addr, val);
         return;
     }
-    else
-    {
-        mem = MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU);
-    }
+    else { mem = MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU); }
 
     *mem = val;
 }

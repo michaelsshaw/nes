@@ -9,7 +9,7 @@
  * @mainpage NES
  *
  * This is the documentation for a NES emulator written by Michael Shaw.
- * 
+ *
  * The program begins in the #main function in nes.c
  *
  *
@@ -28,11 +28,15 @@
     * $2000-$2007	$0008	NES PPU registers
     * $2008-$3FFF	$1FF8	Mirrors of $2000-2007 (repeats every 8 bytes)
     * $4000-$4017	$0018	NES APU and I/O registers
-    * $4018-$401F	$0008	APU and I/O functionality that is normally disabled.
+    * $4018-$401F	$0008	APU and I/O functionality that is normally
+   disabled.
     * https://wiki.nesdev.org/w/index.php?title=CPU_memory_map
 */
 
-#define OFFS_CART 0x4020
+#define OFFS_CART  0x4020
+#define NES_WIDTH  256
+#define NES_HEIGHT 240
+#define NES_RES    (NES_WIDTH * NES_HEIGHT)
 
 struct ppu;
 
@@ -55,9 +59,15 @@ struct nes
         u8 *chr;
     } cartridge; //!< Contains all ROM cartridge data
 
+    u16 mirror;
+
     void **mappers; //!< Function array for memory mappers
 
     int offs;
+
+    u8 enable;
+
+    u32 pixels[NES_WIDTH * NES_HEIGHT];
 };
 
 void

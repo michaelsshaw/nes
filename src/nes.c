@@ -62,25 +62,14 @@ nes_time_get()
 int
 nes_game_loop(void *in)
 {
-
     struct nes *nes = (struct nes *)in;
 
     uint64_t last    = 0;
     uint64_t now     = 0;
-    uint64_t start   = 0;
-    uint64_t lastlog = 0;
 
-    uint64_t cyclecount = 0;
-
-    for (;;)
+    while (nes->enable)
     {
         now = nes_time_get();
-        if (now - lastlog >= ONE_BILLION)
-        {
-            printf("Ran %lld cycles\n", cyclecount);
-            cyclecount = 0;
-            lastlog    = now;
-        }
 
         if (now - last < NS_CLOCK)
             continue;
@@ -89,11 +78,15 @@ nes_game_loop(void *in)
         ppu_clock(nes->ppu);
         ppu_clock(nes->ppu);
 
+        if (nes->ppu->nmi)
+        {
+            nes->ppu->nmi = 0;
+            cpu_nmi(nes->cpu);
+        }
         cpu_clock(nes->cpu);
 
         last = now;
 
-        cyclecount++;
     }
 
     return 0;
@@ -139,7 +132,6 @@ nes_window_loop(struct nes *nes)
       SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     SDL_Event ev;
-    int       i = 0;
 
     /*
      *
@@ -182,6 +174,13 @@ nes_window_loop(struct nes *nes)
               w_pt,                           //
               h_pt);                          //
 
+    SDL_Texture *tex_screen = SDL_CreateTexture(renderer,
+                                                SDL_PIXELFORMAT_ARGB8888,
+                                                SDL_TEXTUREACCESS_STREAMING,
+                                                NES_WIDTH,
+                                                NES_HEIGHT);
+
+    RECT_DECL(screen, 0, 0, NES_OUT_WIDTH, WINDOW_HEIGHT);
     /**
     // Second thread for actual NES operation
     // The current thread is for SDL only
@@ -211,6 +210,7 @@ nes_window_loop(struct nes *nes)
         {
             if (ev.type == SDL_QUIT)
             {
+                nes->enable = 0;
                 goto out;
             }
             if (ev.type == SDL_KEYDOWN)
@@ -223,6 +223,29 @@ nes_window_loop(struct nes *nes)
             }
         }
 
+        /*u8 ntx, nty;
+        for (int y = 0; y < NES_HEIGHT; y++)
+        {
+            for (int x = 0; x < NES_WIDTH; x++)
+            {
+                ntx        = x / 8;
+                nty        = y / 8;
+
+                u16 ntaddr = 0x2000 + ntx + nty * 32;
+                u8  pix    = ppu_read(nes->ppu, ntaddr);
+
+                u8  pvl    = ppu_read(nes->ppu, (pix << 4) + (y % 8));
+                u8  pvh    = ppu_read(nes->ppu, (pix << 4) + (y % 8) + 0x08);
+
+                pvl >>= (7 - x % 8);
+                pvh >>= (7 - x % 8);
+
+                u8 pv  = ((pvl & 0x01) | ((pvh << 1) & 0x02));
+                u8 col = ppu_read(nes->ppu, 0x3F00 + pv);
+                nes->pixels[x + y * NES_WIDTH] = nes->ppu->pal[col];
+            }
+        }*/
+
         //
         // Update the PT pixels and textures
         //
@@ -233,12 +256,15 @@ nes_window_loop(struct nes *nes)
         pix_pt1 = ppu_get_patterntable(nes->ppu, 1, 0);
         SDL_UpdateTexture(tex_pt1, NULL, pix_pt1, w_pt * 4);
 
+        SDL_UpdateTexture(tex_screen, NULL, nes->pixels, NES_WIDTH * 4);
+
         //
         // Copy the textures to the renderer
         //
 
         SDL_RenderCopy(renderer, tex_pt0, NULL, &nesrect_pt0);
         SDL_RenderCopy(renderer, tex_pt1, NULL, &nesrect_pt1);
+        SDL_RenderCopy(renderer, tex_screen, NULL, &nesrect_screen);
         SDL_RenderPresent(renderer);
 
         last = now;
@@ -276,10 +302,11 @@ main(int argc, char **argv)
     NES               = malloc(sizeof(struct nes));
     NES->cpu          = malloc(sizeof(struct cpu));
     NES->ppu          = malloc(sizeof(struct ppu));
-    NES->cpu->mem     = malloc(0xFFFF);
+    NES->cpu->mem     = malloc(MEM_SIZE);
     NES->mappers      = malloc(0xFF * sizeof(void *));
     NES->offs         = 0;
     NES->cpu->echooff = 0;
+    NES->enable       = 1;
 
     struct nes *nes = NES;
 
@@ -322,6 +349,8 @@ main(int argc, char **argv)
     fread(&header_rom, 16, 1, file);
     nes->cartridge.mapper =
       (header_rom.flags7 & 0xF0) | (header_rom.flags6 >> 0x04);
+    nes->mirror =
+      (header_rom.flags6 & 0x01) ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
 
     if (header_rom.flags6 & 0x04)
     {
@@ -340,7 +369,7 @@ main(int argc, char **argv)
             int sprg = nes->cartridge.s_prg_rom_16 * 0x4000;
             int schr = nes->cartridge.s_chr_rom_8 * 0x2000;
 
-            printf("CHR SIZE: %04X CHR SIZE: %04X\n", sprg, schr);
+            printf("PRG SIZE: %04X CHR SIZE: %04X\n", sprg, schr);
 
             nes->cartridge.chr = malloc(schr);
             nes->cartridge.prg = malloc(sprg);
