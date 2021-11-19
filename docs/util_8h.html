@@ -90,14 +90,8 @@ $(document).ready(function(){initNavTree('util_8h.html',''); initResizable(); })
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a926c1ab4f6ca8b244750377dcdea9ec1"><td class="memItemLeft" align="right" valign="top"><a id="a926c1ab4f6ca8b244750377dcdea9ec1"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>MIN</b>(_a,  _b)&#160;&#160;&#160;((_a) &gt; (_b) ? (_b) : (_a))</td></tr>
-<tr class="separator:a926c1ab4f6ca8b244750377dcdea9ec1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad448d437b99a125bd9344585d4f02e9a"><td class="memItemLeft" align="right" valign="top"><a id="ad448d437b99a125bd9344585d4f02e9a"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>MAX</b>(_a,  _b)&#160;&#160;&#160;((_a) &lt; (_b) ? (_b) : (_a))</td></tr>
-<tr class="separator:ad448d437b99a125bd9344585d4f02e9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a324968721704b00572fe5395d02e2ae7"><td class="memItemLeft" align="right" valign="top"><a id="a324968721704b00572fe5395d02e2ae7"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>INRANGE</b>(_num,  _x,  _y)&#160;&#160;&#160;((_num &gt;= MIN(_x, _y)) &amp;&amp; (_num &lt;= MAX(_x, _y)))</td></tr>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>INRANGE</b>(_num,  _x,  _y)&#160;&#160;&#160;((_num) &gt;= (_x) &amp;&amp; (_num) &lt;= (_y))</td></tr>
 <tr class="separator:a324968721704b00572fe5395d02e2ae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e32697b0fdbbdf4e253ea2bb03f17a0"><td class="memItemLeft" align="right" valign="top"><a id="a1e32697b0fdbbdf4e253ea2bb03f17a0"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>IFINRANGE</b>(__num,  __xx,  __yy)&#160;&#160;&#160;if (INRANGE((__num), (__xx), (__yy)))</td></tr>

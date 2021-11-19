@@ -6,5 +6,6 @@ var nes_8h_structnes =
     [ "mirror", "nes_8h.html#acf43f7d61fc2e1fd7a0ac9f99c774222", null ],
     [ "mappers", "nes_8h.html#a5d3e4c8018e71bd736bf7436ba175a20", null ],
     [ "offs", "nes_8h.html#a7eef0f1461d0f2b484b3b2620d962468", null ],
-    [ "pixels", "nes_8h.html#a1c0742df9b0328ca12f551f5eda475c4", null ]
+    [ "enable", "nes_8h.html#ace8eaef3664ef463ab8a0094a698d754", null ],
+    [ "pixels", "nes_8h.html#a89d4f4e2ceec3a80594cd8de66c7aeab", null ]
 ];

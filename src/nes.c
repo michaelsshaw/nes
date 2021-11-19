@@ -121,7 +121,7 @@ nes_window_loop(struct nes *nes)
      */
 
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_Window *window = SDL_CreateWindow("SDL2",
+    SDL_Window *window = SDL_CreateWindow("mnem",
                                           SDL_WINDOWPOS_UNDEFINED,
                                           SDL_WINDOWPOS_UNDEFINED,
                                           WINDOW_WIDTH,

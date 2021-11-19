@@ -1,10 +1,10 @@
 var indexSectionsWithContent =
 {
-  0: "cdfmnprsuv",
+  0: "cdfmnprstuv",
   1: "np",
   2: "mnpu",
   3: "cmnp",
-  4: "cdfmprsv",
+  4: "cdfmprstv",
   5: "p",
   6: "n"
 };

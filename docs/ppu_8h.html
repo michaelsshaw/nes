@@ -177,6 +177,21 @@ Macros</h2></td></tr>
 <tr class="memitem:ae3057f127d2bf205078d0d05ace0b5e2"><td class="memItemLeft" align="right" valign="top"><a id="ae3057f127d2bf205078d0d05ace0b5e2"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>PPUSTATUS_O</b>&#160;&#160;&#160;0x20</td></tr>
 <tr class="separator:ae3057f127d2bf205078d0d05ace0b5e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40b8051275c18d22bfff7e1e45923dfc"><td class="memItemLeft" align="right" valign="top"><a id="a40b8051275c18d22bfff7e1e45923dfc"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>PPULOOPY_FY</b>&#160;&#160;&#160;0x7000</td></tr>
+<tr class="separator:a40b8051275c18d22bfff7e1e45923dfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80c311904d2f356b004f18be50735802"><td class="memItemLeft" align="right" valign="top"><a id="a80c311904d2f356b004f18be50735802"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>PPULOOPY_Y</b>&#160;&#160;&#160;0x0800</td></tr>
+<tr class="separator:a80c311904d2f356b004f18be50735802"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e7d90281ce339308a78963853d00c4b"><td class="memItemLeft" align="right" valign="top"><a id="a2e7d90281ce339308a78963853d00c4b"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>PPULOOPY_X</b>&#160;&#160;&#160;0x0400</td></tr>
+<tr class="separator:a2e7d90281ce339308a78963853d00c4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6acc8ea1c01f32410d35b6a53279dccf"><td class="memItemLeft" align="right" valign="top"><a id="a6acc8ea1c01f32410d35b6a53279dccf"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>PPULOOPY_CY</b>&#160;&#160;&#160;0x03E0</td></tr>
+<tr class="separator:a6acc8ea1c01f32410d35b6a53279dccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01bc247e7030014145d1aaa75351ca23"><td class="memItemLeft" align="right" valign="top"><a id="a01bc247e7030014145d1aaa75351ca23"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>PPULOOPY_CX</b>&#160;&#160;&#160;0x001F</td></tr>
+<tr class="separator:a01bc247e7030014145d1aaa75351ca23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a452efac18822f6fea4353802b60074a0"><td class="memItemLeft" align="right" valign="top"><a id="a452efac18822f6fea4353802b60074a0"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>PPURMASK</b>(_a)&#160;&#160;&#160;((_a) == PPUSTATUS ? (0xE0) : 0xFF)</td></tr>
 <tr class="separator:a452efac18822f6fea4353802b60074a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -274,14 +289,13 @@ Data return from the address in PPUDATA. </td></tr>
 <td class="fieldname">
 vaddr</td>
 <td class="fielddoc">
-Address written by the CPU at PPUADDR. </td></tr>
-<tr><td class="fieldtype">
-<a id="a60273d38a7f56bad6706bb5df57c6639"></a>u8</td>
-<td class="fieldname">
-vaddrtemp</td>
-<td class="fielddoc">
-<p>Temporary storage of the upper byte of the address written at PPUADDR </p>
 </td></tr>
+<tr><td class="fieldtype">
+<a id="a82f4512a6c3693d81fc2fa87b4377645"></a>u16</td>
+<td class="fieldname">
+taddr</td>
+<td class="fielddoc">
+Address written by the CPU at PPUADDR. </td></tr>
 <tr><td class="fieldtype">
 <a id="a6d4a776a4165589abcebd0058d876510"></a>u16</td>
 <td class="fieldname">
@@ -295,13 +309,6 @@ fstoggle</td>
 <td class="fielddoc">
 Fine scroll toggle. </td></tr>
 <tr><td class="fieldtype">
-<a id="a68623fd288c4c5598d94ccbdf10852c2"></a>u16</td>
-<td class="fieldname">
-reg_loopy</td>
-<td class="fielddoc">
-<p>Register made by loopy Layout: (0 FFFYXCC CCCVVVVV) Fine y scroll(F), nametable_y(Y), nametable_x(X), coarse_y(C), coarse_x(V) </p>
-</td></tr>
-<tr><td class="fieldtype">
 <a id="a0680d9f200d275c6961e61895ae096b2"></a>u16</td>
 <td class="fieldname">
 reg_shift_1</td>
@@ -314,13 +321,13 @@ reg_shift_2</td>
 <td class="fielddoc">
 </td></tr>
 <tr><td class="fieldtype">
-<a id="a549a1aa996c99ce40a862715f1f04d1f"></a>u16</td>
+<a id="a7e71107b242c74cea07712b820493892"></a>int</td>
 <td class="fieldname">
 cycle</td>
 <td class="fielddoc">
 Cycle count. </td></tr>
 <tr><td class="fieldtype">
-<a id="aa5bdf0a604d48beb43c651a36f77dfa6"></a>u16</td>
+<a id="a7ff2c0762af64b1d1c1740702c31187d"></a>int</td>
 <td class="fieldname">
 scanline</td>
 <td class="fielddoc">
@@ -337,6 +344,54 @@ All 64 colors the NES can display. </td></tr>
 fw</td>
 <td class="fielddoc">
 NES data structure that also contains this structure. </td></tr>
+<tr><td class="fieldtype">
+<a id="af8326b1e4d507e4fdccb4f6eaa06876e"></a>u8</td>
+<td class="fieldname">
+bg_id</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="ae111cb0cfc25c689314a8cf0cb62df1e"></a>u8</td>
+<td class="fieldname">
+bg_at</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="a919483d644b3e4236bdfd59bc0903b5b"></a>u8</td>
+<td class="fieldname">
+bg_lsb</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="a577856a8dad5d8e00a5008d5a2118673"></a>u8</td>
+<td class="fieldname">
+bg_msb</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="a3a6c9510aab34510f69b95a4133fcc97"></a>u16</td>
+<td class="fieldname">
+bg_shift_plo</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="a639b913b18ccfd4932cc024d5306d701"></a>u16</td>
+<td class="fieldname">
+bg_shift_phi</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="a3dda42144523c9eb041eb9b6c9a2ae95"></a>u16</td>
+<td class="fieldname">
+bg_shift_alo</td>
+<td class="fielddoc">
+</td></tr>
+<tr><td class="fieldtype">
+<a id="ae1335090c4116c5d75cfbbd99acf5391"></a>u16</td>
+<td class="fieldname">
+bg_shift_ahi</td>
+<td class="fielddoc">
+</td></tr>
 </table>
 
 </div>
