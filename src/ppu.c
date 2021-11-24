@@ -22,7 +22,7 @@
     _ppu->bg_shift_plo = (_ppu->bg_shift_plo & 0xFF00) | (_ppu->bg_lsb);       \
     _ppu->bg_shift_phi = (_ppu->bg_shift_phi & 0xFF00) | (_ppu->bg_msb);       \
     _ppu->bg_shift_alo =                                                       \
-      (_ppu->bg_shift_alo & 0xFF00) | ((_ppu->bg_at & 0x01) ? 0xFF : 0x00);   \
+      (_ppu->bg_shift_alo & 0xFF00) | ((_ppu->bg_at & 0x01) ? 0xFF : 0x00);    \
     _ppu->bg_shift_ahi =                                                       \
       (_ppu->bg_shift_ahi & 0xFF00) | ((_ppu->bg_at & 0x02) ? 0xFF : 0x00);
 
@@ -338,7 +338,7 @@ ppu_clock(struct ppu *ppu)
             RESET_SHIFTERS(ppu);
             TAX(ppu);
         }
-
+        // No reason to include this, but i do :^)
         if (cycle == 338 || cycle == 340)
         {
             ppu->bg_id = ppu_read(ppu, 0x2000 | (vaddr & 0x0FFF));

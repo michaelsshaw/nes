@@ -90,11 +90,23 @@ struct ppu
 
     struct nes *fw; //!< NES data structure that also contains this structure
 
+    /*!
+     * 8-bit registers that store the info for the next tile
+     *
+     * Background next tile location
+     * Background next tile attribute
+     */
     u8 bg_id;
     u8 bg_at;
     u8 bg_lsb;
     u8 bg_msb;
 
+    /*!
+     * 16-bit shift registers for rendering the background include:
+     *
+     * Pattern table low, pattern table high
+     * Attribute table low, attribute table high
+     */
     u16 bg_shift_plo;
     u16 bg_shift_phi;
     u16 bg_shift_alo;
@@ -177,7 +189,24 @@ void
 ppu_write(struct ppu *ppu, u16 addr, u8 val);
 
 /*!
- * Runs a single clock cycle for the PPU
+ * TLDR:
+ *      Runs a single clock cycle for the PPU and computes a
+ *      single pixel
+ *
+ * Background rendering:
+ *      Shift registers are updated every 8 cycles from C(2-257)
+ *      The most significant bit is grabbed from each of the 4 bg
+ *      shift registers and used to form a pixel.
+ *
+ *      https://wiki.nesdev.org/w/index.php?title=PPU_scrolling
+ *      https://wiki.nesdev.org/w/index.php?title=PPU_rendering
+ *
+ *      These articles contain very detailed information on how
+ *      shifters work and the reasoning behind a lot of the bitwise
+ *      manipulation that I performed a great deal of, without
+ *      realizing that there was already an article containing every
+ *      single number I computed myself.
+ *
  *
  * @param ppu
  */
