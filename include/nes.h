@@ -68,6 +68,8 @@ struct nes
     u8 enable;
 
     u32 pixels[NES_WIDTH * NES_HEIGHT];
+
+    uint64_t cycle;
 };
 
 void

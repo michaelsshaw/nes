@@ -64,8 +64,8 @@ nes_game_loop(void *in)
 {
     struct nes *nes = (struct nes *)in;
 
-    uint64_t last    = 0;
-    uint64_t now     = 0;
+    uint64_t last = 0;
+    uint64_t now  = 0;
 
     while (nes->enable)
     {
@@ -85,8 +85,8 @@ nes_game_loop(void *in)
         }
         cpu_clock(nes->cpu);
 
+        nes->cycle += 1;
         last = now;
-
     }
 
     return 0;
@@ -307,6 +307,7 @@ main(int argc, char **argv)
     NES->offs         = 0;
     NES->cpu->echooff = 0;
     NES->enable       = 1;
+    NES->cycle        = 0;
 
     struct nes *nes = NES;
 

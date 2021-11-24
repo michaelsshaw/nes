@@ -111,6 +111,24 @@ struct ppu
     u16 bg_shift_phi;
     u16 bg_shift_alo;
     u16 bg_shift_ahi;
+
+    /*!
+     * Sprite registers
+     */
+
+    u8 oam[256]; //!< Object attribute memory
+    u8 soam[32]; //!< Secondary OAM
+    u8 n_oam;    // 0-63
+    u8 m_oam;    // 0-3
+    u8 i_soam;   // 0-7
+    u8 soam_write_enable;
+    u8 soam_step;
+    u8 soam_true;
+
+    u8 sp_shift_lo[8];
+    u8 sp_shift_hi[8];
+    u8 sp_counter[8];
+    u8 sp_latch[8];
 };
 
 /*!

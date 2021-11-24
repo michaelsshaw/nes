@@ -77,7 +77,35 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
         ppu_cpu_write(em->ppu, addr, val);
         return;
     }
-    else { mem = MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU); }
+    else if (addr == 0x4014) // OAM DMA
+    {
+        // Takes a few cycles to do this, so just delay things
+        cpu->cycles += 513 + (em->cycle % 2 == 1 ? 1 : 0);
+
+        // Example:
+        // lda $XX
+        // sta $4014
+        //
+        // Copies values of $XXYY-$XXFF to PPU OAM
+        // where $YY = OAMADDR
+
+        struct ppu *ppu = em->ppu;
+
+        u16 naddr = 0x0000 | val;
+        naddr <<= 8;
+        naddr |= ppu->registers.oamaddr;
+
+        u16 faddr = naddr | 0xFF;
+
+        for (; naddr <= faddr; naddr++)
+        {
+            ppu->oam[naddr & 0x00FF] = nes_cpu_read(CPU, naddr);
+        }
+    }
+    else
+    { //
+        mem = MAP_CALL(em, em->cartridge.mapper, addr, mem, MAP_MODE_CPU);
+    }
 
     *mem = val;
 }

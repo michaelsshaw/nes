@@ -67,6 +67,11 @@ ppu_cpu_read(struct ppu *ppu, u16 addr)
             CLPPUFLAG(ppu, ppustatus, PPUSTATUS_V);
             ppu->address_latch = 0;
             break;
+        case OAMDATA: // $2004
+            r = ppu->oam[ppu->registers.oamaddr];
+            if (!PPUFLAG(ppu, ppustatus, PPUSTATUS_V))
+                ppu->registers.oamaddr += 1;
+            break;
         case PPUDATA: // $2007
             r         = ppu->data;
             ppu->data = ppu_read(ppu, ppu->vaddr);
@@ -96,6 +101,13 @@ ppu_cpu_write(struct ppu *ppu, u16 addr, u8 data)
             break;
         case PPUMASK: // $2001
             ppu->registers.ppumask = data;
+            break;
+        case OAMADDR: // $2003
+            ppu->registers.oamaddr = data;
+            break;
+        case OAMDATA: // $2004
+            ppu->oam[ppu->registers.oamaddr] = data;
+            ppu->registers.oamaddr += 1;
             break;
         case PPUSCROLL: // $2005
             if (ppu->address_latch == 0)
@@ -275,6 +287,9 @@ ppu_clock(struct ppu *ppu)
     u16 vaddr    = ppu->vaddr;
     IFINRANGE(scanline, -1, 239)
     {
+        /*
+         * Background rendering ONLY
+         */
         if (scanline == 0 && cycle == 0)
         {
             ppu->cycle = 1;
@@ -338,11 +353,6 @@ ppu_clock(struct ppu *ppu)
             RESET_SHIFTERS(ppu);
             TAX(ppu);
         }
-        // No reason to include this, but i do :^)
-        if (cycle == 338 || cycle == 340)
-        {
-            ppu->bg_id = ppu_read(ppu, 0x2000 | (vaddr & 0x0FFF));
-        }
 
         if (scanline == -1 && INRANGE(cycle, 280, 304))
         {
@@ -350,51 +360,132 @@ ppu_clock(struct ppu *ppu)
         }
     }
 
-    if (scanline == 241 && cycle == 1)
+    /*
+     * Foreground rendering
+     *
+     * kept in a separate loop to keep readable :)
+     * i hope the compiler optimizes this
+     */
+    IFINRANGE(scanline, 0, 239)
     {
-        PPUSETFLAG(ppu, ppustatus, PPUSTATUS_V);
-        if (PPUFLAG(ppu, ppuctrl, PPUCTRL_V))
+
+        /*
+         * S-OAM init to $FF
+         *
+         * Technically this takes 64 cycles to complete
+         * because of the memory write speeds, but the computer
+         * running this program isn't a NES so....
+         */
+
+        if (cycle == 1)
         {
-            ppu->nmi = 1;
+            memset(ppu->soam, 0xFF, 32);
+            ppu->n_oam             = 0;
+            ppu->m_oam             = 0;
+            ppu->i_soam            = 0;
+            ppu->soam_write_enable = 1;
+            ppu->soam_step         = 0;
+            ppu->soam_true         = 0;
+        }
+
+        /*
+         * SPRITE EVALUATION
+         */
+
+        IFINRANGE(cycle, 65, 256)
+        {
+            u16 tcycle = cycle - 64;
+            u8  read   = tcycle % 2 == 1;
+            switch (ppu->soam_step)
+            {
+                case 0:
+                    if (read)
+                    {
+                    ppu_step1: // yes i do need to use gotos here sorry
+
+                        ppu->sp_latch[ppu->i_soam] =
+                          ppu->oam[ppu->n_oam * 4 + ppu->m_oam];
+
+                        if (ppu->m_oam == 0 &&
+                            scanline - ppu->sp_latch[ppu->i_soam] < 8)
+                        {
+                            ppu->soam_true = 1;
+                        }
+                        else if (ppu->m_oam == 0)
+                        {
+                            ppu->n_oam
+                            ppu->soam_true = 0;
+                        }
+
+
+                    }
+                    else
+                    {
+                        u8 y = ppu->sp_latch[ppu->i_soam];
+
+                        if ()
+                        {
+                            ppu->soam[ppu->i_soam * 4 + ppu->m_oam] = y;
+                            ppu->m_oam += 1;
+                        }
+                        else
+                        {
+                            ppu->m_oam = 0;
+                        }
+                    }
+                    break;
+            }
         }
     }
+}
 
-    u8 bgpix = 0;
-    u8 bgpal = 0;
-    if (PPUFLAG(ppu, ppumask, PPUMASK_b))
+/*
+ * Cause a CPU NMI if NMI enable flag is 1
+ */
+if (scanline == 241 && cycle == 1)
+{
+    PPUSETFLAG(ppu, ppustatus, PPUSTATUS_V);
+    if (PPUFLAG(ppu, ppuctrl, PPUCTRL_V))
     {
-        u16 bit_mux = 0x8000 >> ppu->fxscroll;
-
-        u8 pat0 = (ppu->bg_shift_plo & bit_mux) > 0;
-        u8 pat1 = (ppu->bg_shift_phi & bit_mux) > 0;
-
-        u8 pal0 = (ppu->bg_shift_alo & bit_mux) > 0;
-        u8 pal1 = (ppu->bg_shift_ahi & bit_mux) > 0;
-
-        bgpix = (pat1 << 1) | pat0;
-        bgpal = (pal1 << 1) | pal0;
+        ppu->nmi = 1;
     }
+}
 
-    struct nes *nes = ppu->fw;
-    if (INRANGE((cycle - 1), 0, NES_WIDTH - 1) &&
-        INRANGE(scanline, 0, NES_HEIGHT - 1) && 1)
+u8 bgpix = 0;
+u8 bgpal = 0;
+if (PPUFLAG(ppu, ppumask, PPUMASK_b))
+{
+    u16 bit_mux = 0x8000 >> ppu->fxscroll;
+
+    u8 pat0 = (ppu->bg_shift_plo & bit_mux) > 0;
+    u8 pat1 = (ppu->bg_shift_phi & bit_mux) > 0;
+
+    u8 pal0 = (ppu->bg_shift_alo & bit_mux) > 0;
+    u8 pal1 = (ppu->bg_shift_ahi & bit_mux) > 0;
+
+    bgpix = (pat1 << 1) | pat0;
+    bgpal = (pal1 << 1) | pal0;
+}
+
+struct nes *nes = ppu->fw;
+if (INRANGE((cycle - 1), 0, NES_WIDTH - 1) &&
+    INRANGE(scanline, 0, NES_HEIGHT - 1) && 1)
+{
+    nes->pixels[(cycle - 1) + scanline * NES_WIDTH] = PCOLREAD(bgpal, bgpix);
+}
+
+ppu->cycle += 1;
+
+if (ppu->cycle > 340)
+{
+    ppu->cycle    = 0;
+    ppu->scanline = ppu->scanline + 1;
+
+    if (ppu->scanline >= 261)
     {
-        nes->pixels[(cycle - 1) + scanline * NES_WIDTH] =
-          PCOLREAD(bgpal, bgpix);
+        ppu->scanline = -1;
     }
-
-    ppu->cycle += 1;
-
-    if (ppu->cycle > 340)
-    {
-        ppu->cycle    = 0;
-        ppu->scanline = ppu->scanline + 1;
-
-        if (ppu->scanline >= 261)
-        {
-            ppu->scanline = -1;
-        }
-    }
+}
 }
 
 void
