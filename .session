@@ -2,15 +2,17 @@ let SessionLoad = 1
 if &cp | set nocp | endif
 let s:cpo_save=&cpo
 set cpo&vim
+inoremap <silent> <C-N> :NERDTreeToggle
 inoremap <silent> <C-W> 
 inoremap <silent> <C-F> :ClangFormat
 inoremap <silent> <C-S> :w
 nnoremap <silent>  :ClangFormat
+nnoremap <silent>  :NERDTreeToggle
 nnoremap <silent>  :CtrlP
 vnoremap <silent>  :wgv
 nnoremap <silent>  :w
-nmap \gh :above diffget //3
 nmap \gu :above diffget //2
+nmap \gh :above diffget //3
 nmap \gf :above diffget //2
 nmap \gj :above diffget //3
 nmap \gc :above Git commit
@@ -19,8 +21,13 @@ nmap \gs :above G
 xmap gx <Plug>NetrwBrowseXVis
 nmap gx <Plug>NetrwBrowseX
 xnoremap p pgvy
-nnoremap <SNR>75_: :=v:count ? v:count : ''
+nnoremap <silent> s i
+nnoremap <silent> <S-Del> "+x
+nnoremap <silent> <C-Insert> "+y
+nnoremap <silent> <S-Insert> "+gP
+nnoremap <SNR>98_: :=v:count ? v:count : ''
 nnoremap <SNR>68_: :=v:count ? v:count : ''
+nnoremap <SNR>75_: :=v:count ? v:count : ''
 xnoremap <silent> <Plug>NetrwBrowseXVis :call netrw#BrowseXVis()
 nnoremap <silent> <Plug>NetrwBrowseX :call netrw#BrowseX(netrw#GX(),netrw#CheckIfRemote(netrw#GX()))
 nnoremap <silent> <Plug>GitGutterPreviewHunk :call gitgutter#utility#warn('Please change your map <Plug>GitGutterPreviewHunk to <Plug>(GitGutterPreviewHunk)')
@@ -44,16 +51,19 @@ nnoremap <silent> <Plug>(Tman) :call man#get_page_from_cword('tab',        v:c
 nnoremap <silent> <Plug>(Vman) :call man#get_page_from_cword('vertical',   v:count)
 nnoremap <silent> <Plug>(Sman) :call man#get_page_from_cword('horizontal', v:count)
 nnoremap <silent> <Plug>(Man) :call man#get_page_from_cword('horizontal', v:count)
+nnoremap <silent> <C-N> :NERDTreeToggle
 nnoremap <silent> <C-F> :ClangFormat
 vnoremap <silent> <C-S> :wgv
 nnoremap <silent> <C-S> :w
 inoremap <silent>  :ClangFormat
+inoremap <silent>  :NERDTreeToggle
 inoremap <silent>  :w
 inoremap <silent>  
 let &cpo=s:cpo_save
 unlet s:cpo_save
 set background=dark
 set backspace=indent,eol,start
+set clipboard=unnamedplus
 set display=truncate
 set noequalalways
 set expandtab
@@ -67,7 +77,7 @@ set nolangremap
 set laststatus=2
 set nrformats=bin,hex
 set ruler
-set runtimepath=~/.vim,~/.vim/plugged/gruvbox,~/.vim/plugged/vim-man,~/.vim/plugged/ctrlp.vim,~/.vim/plugged/undotree,~/.vim/plugged/vim-clang-format,~/.vim/plugged/vim-airline,~/.vim/plugged/vim-gitgutter,~/.vim/plugged/vim-fugitive,/usr/share/vim/vimfiles,/usr/share/vim/vim82,/usr/share/vim/vimfiles/after,~/.vim/after
+set runtimepath=~/.vim,~/.vim/plugged/gruvbox,~/.vim/plugged/vim-man,~/.vim/plugged/ctrlp.vim,~/.vim/plugged/undotree,~/.vim/plugged/vim-clang-format,~/.vim/plugged/vim-airline,~/.vim/plugged/vim-gitgutter,~/.vim/plugged/vim-fugitive,~/.vim/plugged/nerdtree,/usr/share/vim/vimfiles,/usr/share/vim/vim82,/usr/share/vim/vimfiles/after,~/.vim/after
 set scrolloff=5
 set shiftwidth=4
 set showcmd
@@ -86,7 +96,6 @@ set undofile
 set viminfo='20,\"50
 set whichwrap=b,s,<,>,h,l,[,]
 set wildmenu
-set window=72
 let s:so_save = &g:so | let s:siso_save = &g:siso | setg so=0 siso=0 | setl so=-1 siso=-1
 let v:this_session=expand("<sfile>:p")
 silent only
@@ -98,7 +107,7 @@ endif
 set shortmess=aoO
 argglobal
 %argdel
-$argadd ~/workspace/nes/src/
+$argadd ~/workspace/nes/src
 edit nescpu.c
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
@@ -280,12 +289,12 @@ if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
 keepjumps 83
-normal! 08|
+normal! 09|
 lcd ~/workspace/nes/src
 wincmd w
 argglobal
 if bufexists("~/workspace/nes/src/ppu.h") | buffer ~/workspace/nes/src/ppu.h | else | edit ~/workspace/nes/src/ppu.h | endif
-balt ~/workspace/nes/src/nes.c
+balt ~/.vimrc
 let s:cpo_save=&cpo
 set cpo&vim
 nmap <buffer> [c <Plug>(GitGutterPrevHunk)
@@ -429,12 +438,12 @@ setlocal nowrap
 setlocal wrapmargin=0
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 158 - ((48 * winheight(0) + 29) / 58)
+let s:l = 187 - ((28 * winheight(0) + 29) / 58)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 158
-normal! $
+keepjumps 187
+normal! 0
 wincmd w
 argglobal
 if bufexists("~/workspace/nes/src/nes.c") | buffer ~/workspace/nes/src/nes.c | else | edit ~/workspace/nes/src/nes.c | endif
@@ -591,7 +600,7 @@ normal! 03|
 wincmd w
 argglobal
 terminal ++curwin ++cols=279 ++rows=12 
-let s:term_buf_5 = bufnr()
+let s:term_buf_7 = bufnr()
 balt ~/.vimrc
 let s:cpo_save=&cpo
 set cpo&vim
@@ -751,12 +760,13 @@ exe '3resize ' . ((&lines * 58 + 36) / 73)
 exe 'vert 3resize ' . ((&columns * 92 + 139) / 279)
 exe '4resize ' . ((&lines * 12 + 36) / 73)
 tabnext 1
+badd +1 ~/workspace/nes/src/nescpu.c
+badd +0 ~/workspace/nes/src
 badd +174 ~/workspace/nes/src/ppu.c
-badd +41 ~/.vimrc
+badd +187 ~/workspace/nes/src/ppu.h
 badd +69 ~/workspace/nes/src/nes.c
-badd +78 ~/workspace/nes/src/ppu.h
-badd +0 ~/workspace/nes/src/nescpu.c
 badd +72 ~/workspace/nes/include/nes.h
+badd +41 ~/.vimrc
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0
   silent exe 'bwipe ' . s:wipebuf
 endif
