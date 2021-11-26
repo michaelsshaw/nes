@@ -125,6 +125,8 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
         {
             ppu->oam[naddr & 0x00FF] = nes_cpu_read(CPU, naddr);
         }
+
+        return;
     }
     else
     { //

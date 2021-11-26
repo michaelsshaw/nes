@@ -29,6 +29,7 @@
 
 #include <cpu.h>
 #include <nes.h>
+#include <stdio.h>
 
 #define PPUCTRL   0x2000
 #define PPUMASK   0x2001
@@ -151,6 +152,9 @@ struct ppu
     u8 sp_latch[8];
     u8 sp_counter[8];
 };
+
+void
+ppu_debug_print_oam(struct ppu *ppu);
 
 /*!
  * Nametable mirroring enum
