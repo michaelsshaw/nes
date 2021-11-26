@@ -471,7 +471,8 @@ ppu_clock(struct ppu *ppu)
             {
                 u8 y = ppu->soam_latch;
 
-                if (ppu->soam_true || ppu->m_oam == 0)
+                if (ppu->soam_true ||
+                    ppu->m_oam == 0) // always write the y value
                 {
                     if (ppu->soam_write_disable == 0)
                     {
@@ -538,8 +539,8 @@ ppu_clock(struct ppu *ppu)
                           ((ppu->soam[sindex * 4 + 1]
                             << 4) // which sprite in the table
                            | (scanline - ppu->soam[sindex * 4]) // offset by y
-                           | (PPUFLAG(ppu, ppuctrl, PPUCTRL_S) << 12))
-                          + rm * 8;
+                           | (PPUFLAG(ppu, ppuctrl, PPUCTRL_S) << 12)) +
+                          rm * 8;
                         out = ppu_read(ppu, addr);
                         break;
                     case 2:
