@@ -114,29 +114,24 @@ struct ppu
 
     struct nes *fw; //!< NES data structure that also contains this structure
 
-    /*!
+    /*
      * 8-bit registers that store the info for the next tile
-     *
-     * Background next tile location
-     * Background next tile attribute
      */
-    u8 bg_id;
-    u8 bg_at;
-    u8 bg_lsb;
-    u8 bg_msb;
 
-    /*!
+    u8 bg_id;  //!< Background next tile location
+    u8 bg_at;  //!< Background next tile attribute
+    u8 bg_lsb; //!< Background next tile least-significant byte
+    u8 bg_msb; //!< Background next tile most-significant byte
+
+    /*
      * 16-bit shift registers for rendering the background include:
-     *
-     * Pattern table low, pattern table high
-     * Attribute table low, attribute table high
      */
-    u16 bg_shift_plo;
-    u16 bg_shift_phi;
-    u16 bg_shift_alo;
-    u16 bg_shift_ahi;
+    u16 bg_shift_plo; //!< Pattern table low
+    u16 bg_shift_phi; //!< Pattern table high
+    u16 bg_shift_alo; //!< Attribute table low
+    u16 bg_shift_ahi; //!< Attribute table high
 
-    /*!
+    /*
      * Sprite registers
      */
 
@@ -145,14 +140,16 @@ struct ppu
     u8 n_oam;    // 0-63
     u8 m_oam;    // 0-3
     u8 i_soam;   // 0-7
-    u8 soam_write_enable;
-    u8 soam_step;
     u8 soam_true;
+    u8 soam_write_disable;
+    u8 soam_latch;
+
+    u8 sprite_count;
 
     u8 sp_shift_lo[8];
     u8 sp_shift_hi[8];
-    u8 sp_counter[8];
     u8 sp_latch[8];
+    u8 sp_counter[8];
 };
 
 /*!
@@ -231,11 +228,25 @@ void
 ppu_write(struct ppu *ppu, u16 addr, u8 val);
 
 /*!
- * TLDR:
+ * # TLDR:
  *      Runs a single clock cycle for the PPU and computes a
  *      single pixel
  *
- * Background rendering:
+ *
+ * ## Overview:
+ *      The NES will render 261 scanlines, which I will refer to as S(-1,260).
+ *      Every scanline is rendered across 341 cycles C(0,340).
+ *
+ *      The resolution of the NES is 256 x 240, so only scanlines S(0,239) are
+ *      actually output to the screen, with the rest being run at the end of
+ *      each rendering period, referred to as the "vertical blanking" period.
+ *      This is the only time in which the CPU is safe to actually output data
+ *      via PPUDATA or OAMDATA/OAMDMA as doing so otherwise would cause
+ *      artifacting and other weird glitches.
+ *
+ *
+ * ### Background rendering:
+ *
  *      Shift registers are updated every 8 cycles from C(2-257)
  *      The most significant bit is grabbed from each of the 4 bg
  *      shift registers and used to form a pixel.

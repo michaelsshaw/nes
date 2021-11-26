@@ -83,6 +83,18 @@ nes_time_get()
     return 1000000000 * ts.tv_sec + ts.tv_nsec;
 }
 
+/*!
+ * Infinite loop for running actual CPU, PPU and APU logic
+ *
+ * Times the loop so that the clock speed of the CPU is 1.79MHz
+ *
+ * Runs 3 ppu clocks then runs a single CPU clock, as was the timing on the
+ * original NES
+ *
+ * @see ppu_clock
+ *
+ * @param in Void pointer to a struct nes
+ */
 int
 nes_game_loop(void *in)
 {
@@ -117,8 +129,11 @@ nes_game_loop(void *in)
 }
 
 /*!
- *  Main window loop for the entire NES program.
-
+ * Main window loop for the entire NES program.
+ *
+ * Creates a second thread that runs a concurrent infinite loop in
+ * #nes_game_loop
+ *
  * @param nes NES data structure for this window
  */
 void
@@ -205,10 +220,10 @@ nes_window_loop(struct nes *nes)
                                                 NES_HEIGHT);
 
     RECT_DECL(screen, 0, 0, NES_OUT_WIDTH, WINDOW_HEIGHT);
-    /**
-    // Second thread for actual NES operation
-    // The current thread is for SDL only
-    **/
+    /*
+     * Second thread for actual NES operation
+     * The current thread is for SDL only
+     */
 
     SDL_Thread *thread =
       SDL_CreateThread(nes_game_loop, "NES_GAME_LOOP", (void *)nes);

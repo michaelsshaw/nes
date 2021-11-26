@@ -32,13 +32,20 @@
 /*!
  * @mainpage NES
  *
- * This is the documentation for a NES emulator written by Michael Shaw.
+ * This is the documentation for a NES emulator written by Michael Shaw. It
+ * is yet another installment in the beloved series "Michael Reinvents the
+ * Wheel"
  *
  * The program begins in the #main function in nes.c
  *
  *
  * @see nes_cpu_read()
  * @see nes_cpu_write()
+ * @see nes_window_loop()
+ * @see nes_game_loop()
+ *
+ * @see ppu_clock()
+ * @see ppu.h
  */
 
 /*
@@ -46,7 +53,7 @@
     **** CPU memory map
     * Address range	Size	Device
     * $0000-$07FF	$0800	2KB internal RAM
-    * $ 0800-$0FFF	$0800	Mirrors of $0000-$07FF
+    * $0800-$0FFF	$0800	Mirrors of $0000-$07FF
     * $1000-$17FF	$0800
     * $1800-$1FFF	$0800
     * $2000-$2007	$0008	NES PPU registers

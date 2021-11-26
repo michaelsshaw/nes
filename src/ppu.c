@@ -23,6 +23,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <cpu.h>
 #include <em6502.h>
@@ -404,112 +405,204 @@ ppu_clock(struct ppu *ppu)
         if (cycle == 1)
         {
             memset(ppu->soam, 0xFF, 32);
-            ppu->n_oam             = 0;
-            ppu->m_oam             = 0;
-            ppu->i_soam            = 0;
-            ppu->soam_write_enable = 1;
-            ppu->soam_step         = 0;
-            ppu->soam_true         = 0;
+            ppu->n_oam              = 0;
+            ppu->m_oam              = 0;
+            ppu->i_soam             = 0;
+            ppu->soam_true          = 0;
+            ppu->soam_write_disable = 0;
+            ppu->sprite_count       = 0;
         }
 
         /*
-         * SPRITE EVALUATION
+         * SPRITE EVALUATION (for the next line)
          */
 
         IFINRANGE(cycle, 65, 256)
         {
             u16 tcycle = cycle - 64;
-            u8  read   = tcycle % 2 == 1;
-            switch (ppu->soam_step)
+
+            if (tcycle & 0x0001) // read on odd cycles
             {
-                case 0:
-                    if (read)
+                // this is the data we will either write to S-OAM or pass on
+                // next cycle(because we only write on even cycles)
+                ppu->soam_latch = ppu->oam[ppu->n_oam * 4 + ppu->m_oam];
+
+                if (ppu->m_oam == 0 && scanline - ppu->soam_latch < 8)
+                {
+                    // tell the ppu to write to the soam next 7 cycles
+                    // if the sprite is in range
+                    ppu->soam_true = 1;
+                }
+                else if (ppu->m_oam == 0)
+                {
+                    // if we read a y position(m == 0) and it isn't in
+                    // range tell the ppu not to write next
+                    ppu->soam_true = 0;
+                }
+            }
+            else // write on even cycles
+            {
+                u8 y = ppu->soam_latch;
+
+                if (ppu->soam_true)
+                {
+                    if (ppu->soam_write_disable == 0)
                     {
-                    ppu_step1: // yes i do need to use gotos here sorry
-
-                        ppu->sp_latch[ppu->i_soam] =
-                          ppu->oam[ppu->n_oam * 4 + ppu->m_oam];
-
-                        if (ppu->m_oam == 0 &&
-                            scanline - ppu->sp_latch[ppu->i_soam] < 8)
-                        {
-                            ppu->soam_true = 1;
-                        }
-                        else if (ppu->m_oam == 0)
-                        {
-                            ppu->n_oam
-                            ppu->soam_true = 0;
-                        }
-
-
-                    }
-                    else
-                    {
-                        u8 y = ppu->sp_latch[ppu->i_soam];
-
-                        if ()
-                        {
-                            ppu->soam[ppu->i_soam * 4 + ppu->m_oam] = y;
-                            ppu->m_oam += 1;
-                        }
-                        else
+                        ppu->soam[ppu->i_soam * 4 + ppu->m_oam] = y;
+                        ppu->m_oam += 1;
+                        // if we finished reading the 4 bytes, go back and
+                        // increment n
+                        if (ppu->m_oam == 4)
                         {
                             ppu->m_oam = 0;
+                            ppu->n_oam += 1;
+
+                            ppu->i_soam += 1;
                         }
                     }
-                    break;
+                }
+                else
+                {
+                    ppu->n_oam += 1;
+                    ppu->m_oam = 0;
+                }
+            }
+
+            // Post read-write next-step evaluation
+
+            if (ppu->i_soam == 8) // we found 8 sprites
+            {
+                ppu->soam_write_disable = 1;
+            }
+        }
+
+        /*
+         * SPRITE FETCHING (for the next line)
+         *
+         * Use the information we gathered in evaluation and feed it into shift
+         * registers that we can actually use to render data
+         */
+
+        IFINRANGE(cycle, 257, 320) //
+        {
+            // 8 sprites total, 8 cycles per sprite
+            u16 tcycle = cycle - 257; // 0-63
+
+            // since the temp variables aren't used anymore (i_soam, n_oam,
+            // m_oam) we are safe to use them here
+
+            u8 index  = ((u8)(tcycle / 2)); // which part of soam mem(0-31)
+            u8 sindex = ((u8)(tcycle / 8)); // which sprite we're on(0-7)
+
+            u8 rm = index % 4;
+            if ((tcycle & 0x01) == 0) // read on even, write on odd, yes it's
+                                      // the opposite of the above
+            {
+                // read pattern data
+                switch (rm)
+                {
+                    case 0:
+                    case 1:
+                        ppu->soam_latch =
+                          ppu_read(ppu, ppu->soam[sindex * 4 + 1] + rm * 8);
+                        break;
+                    case 2:
+                        ppu->soam_latch = ppu->soam[sindex * 4 + 2];
+                        break;
+                    case 3:
+                        ppu->soam_latch = ppu->soam[sindex * 4 + 3];
+                }
+            }
+            else // we're writing on odd cycles
+            {
+                u8 *loc = &(ppu->sp_shift_lo[0]);
+                loc += rm * 8;
+                loc += sindex;
+
+                *loc = ppu->soam_latch;
             }
         }
     }
-}
 
-/*
- * Cause a CPU NMI if NMI enable flag is 1
- */
-if (scanline == 241 && cycle == 1)
-{
-    PPUSETFLAG(ppu, ppustatus, PPUSTATUS_V);
-    if (PPUFLAG(ppu, ppuctrl, PPUCTRL_V))
+    /*
+     * Cause a CPU NMI if NMI enable flag is 1
+     */
+    if (scanline == 241 && cycle == 1)
     {
-        ppu->nmi = 1;
+        PPUSETFLAG(ppu, ppustatus, PPUSTATUS_V);
+        if (PPUFLAG(ppu, ppuctrl, PPUCTRL_V))
+        {
+            ppu->nmi = 1;
+        }
     }
-}
 
-u8 bgpix = 0;
-u8 bgpal = 0;
-if (PPUFLAG(ppu, ppumask, PPUMASK_b))
-{
-    u16 bit_mux = 0x8000 >> ppu->fxscroll;
-
-    u8 pat0 = (ppu->bg_shift_plo & bit_mux) > 0;
-    u8 pat1 = (ppu->bg_shift_phi & bit_mux) > 0;
-
-    u8 pal0 = (ppu->bg_shift_alo & bit_mux) > 0;
-    u8 pal1 = (ppu->bg_shift_ahi & bit_mux) > 0;
-
-    bgpix = (pat1 << 1) | pat0;
-    bgpal = (pal1 << 1) | pal0;
-}
-
-struct nes *nes = ppu->fw;
-if (INRANGE((cycle - 1), 0, NES_WIDTH - 1) &&
-    INRANGE(scanline, 0, NES_HEIGHT - 1) && 1)
-{
-    nes->pixels[(cycle - 1) + scanline * NES_WIDTH] = PCOLREAD(bgpal, bgpix);
-}
-
-ppu->cycle += 1;
-
-if (ppu->cycle > 340)
-{
-    ppu->cycle    = 0;
-    ppu->scanline = ppu->scanline + 1;
-
-    if (ppu->scanline >= 261)
+    u8 bgpix = 0;
+    u8 bgpal = 0;
+    if (PPUFLAG(ppu, ppumask, PPUMASK_b))
     {
-        ppu->scanline = -1;
+        u16 bit_mux = 0x8000 >> ppu->fxscroll;
+
+        u8 pat0 = (ppu->bg_shift_plo & bit_mux) > 0;
+        u8 pat1 = (ppu->bg_shift_phi & bit_mux) > 0;
+
+        u8 pal0 = (ppu->bg_shift_alo & bit_mux) > 0;
+        u8 pal1 = (ppu->bg_shift_ahi & bit_mux) > 0;
+
+        bgpix = (pat1 << 1) | pat0;
+        bgpal = (pal1 << 1) | pal0;
     }
-}
+
+    if (PPUFLAG(ppu, ppumask, PPUMASK_s))
+    {
+        for (u8 i = 0; i < 8; i++)
+        {
+            if (ppu->sp_counter[i] == 0 && (ppu->sp_latch[i] & 0x20))
+            // if it is at current x and has priority
+            {
+
+                u8 pat0 = (ppu->sp_shift_lo[i] & 0x80) > 0;
+                u8 pat1 = (ppu->sp_shift_hi[i] & 0x80) > 0;
+
+                u8 pal = (ppu->sp_latch[i] & 0x03) + 4;
+
+                bgpix = (pat1 << 1) | pat0;
+                bgpal = pal;
+
+                ppu->sp_shift_lo[i] <<= 1;
+                ppu->sp_shift_hi[i] <<= 1;
+            }
+        }
+    }
+
+    struct nes *nes = ppu->fw;
+    if (INRANGE((cycle - 1), 0, NES_WIDTH - 1) &&
+        INRANGE(scanline, 0, NES_HEIGHT - 1) && 1)
+    {
+        nes->pixels[(cycle - 1) + scanline * NES_WIDTH] =
+          PCOLREAD(bgpal, bgpix);
+    }
+
+    IFINRANGE(cycle, 0, 255)
+    {
+        for (u8 i = 0; i < 8; i++)
+        {
+            if (ppu->sp_counter[i] != 0)
+                ppu->sp_counter[i] -= 1;
+        }
+    }
+
+    ppu->cycle += 1;
+
+    if (ppu->cycle > 340)
+    {
+        ppu->cycle    = 0;
+        ppu->scanline = ppu->scanline + 1;
+
+        if (ppu->scanline >= 261)
+        {
+            ppu->scanline = -1;
+        }
+    }
 }
 
 void
