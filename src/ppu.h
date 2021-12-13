@@ -75,7 +75,8 @@
  * @struct ppu
  * Data structure representation of the PPU
  */
-struct ppu
+
+struct __attribute__((__packed__)) ppu
 {
     u8 *vram; //!< Byte array containing the nametables
 
@@ -94,7 +95,6 @@ struct ppu
         u8 ppudata;   //!< CPU address $2007
     } registers;      //!< PPU internal 8-bit registers
 
-    u8 cpu_latch;
     u8 nmi;
     u8 address_latch;
     u8 data; //!< Data return from the address in PPUDATA
@@ -147,10 +147,13 @@ struct ppu
 
     u8 sprite_count;
 
-    u8 sp_shift_lo[8];
-    u8 sp_shift_hi[8];
     u8 sp_latch[8];
     u8 sp_counter[8];
+    u8 sp_shift_lo[8];
+    u8 sp_shift_hi[8];
+
+    u8 inc_sprite0;
+    u8 ren_sprite0;
 };
 
 void

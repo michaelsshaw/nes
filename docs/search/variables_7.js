@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['taddr_73',['taddr',['../ppu_8h.html#a82f4512a6c3693d81fc2fa87b4377645',1,'ppu']]]
+  ['registers_92',['registers',['../ppu_8h.html#a51a799183a872f5a0469d2c2d393ff30',1,'ppu']]]
 ];

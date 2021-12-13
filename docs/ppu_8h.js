@@ -25,7 +25,19 @@ var ppu_8h =
       [ "bg_shift_plo", "ppu_8h.html#a3a6c9510aab34510f69b95a4133fcc97", null ],
       [ "bg_shift_phi", "ppu_8h.html#a639b913b18ccfd4932cc024d5306d701", null ],
       [ "bg_shift_alo", "ppu_8h.html#a3dda42144523c9eb041eb9b6c9a2ae95", null ],
-      [ "bg_shift_ahi", "ppu_8h.html#ae1335090c4116c5d75cfbbd99acf5391", null ]
+      [ "bg_shift_ahi", "ppu_8h.html#ae1335090c4116c5d75cfbbd99acf5391", null ],
+      [ "oam", "ppu_8h.html#a59a77a12c59a89d93a77d5a158502eee", null ],
+      [ "soam", "ppu_8h.html#aab54cbd81f272fd38a0ebade2d9666f3", null ],
+      [ "n_oam", "ppu_8h.html#aff4ee4aa715a21e96b101ef9745a3e1a", null ],
+      [ "m_oam", "ppu_8h.html#a1ab9757556591cb6161619499fd75315", null ],
+      [ "i_soam", "ppu_8h.html#a44301e3f52df4d876fda1552c5d065a1", null ],
+      [ "soam_write_enable", "ppu_8h.html#a3ba6586cf5e36afb1a29876bb3cb9d53", null ],
+      [ "soam_step", "ppu_8h.html#a7ac06cc6fd1d7a7520e8ee0501b8b31f", null ],
+      [ "soam_true", "ppu_8h.html#a24bfb79f5261b6f82afbb59ab9dc0d11", null ],
+      [ "sp_shift_lo", "ppu_8h.html#aa35d5fb6441050b37a5c57dc4b4d8274", null ],
+      [ "sp_shift_hi", "ppu_8h.html#aa8fd321a08485a3ada6ba7c2fe2081df", null ],
+      [ "sp_counter", "ppu_8h.html#a71cad1bc79f47fe44a8e6278266ca2f3", null ],
+      [ "sp_latch", "ppu_8h.html#ae1c5b4f3f429bdb22a7e4af3dd719008", null ]
     ] ],
     [ "ppu.registers", "ppu_8h.html#structppu_8registers", [
       [ "ppuctrl", "ppu_8h.html#a11b9e1b2c7ee314803244b05f5343909", null ],

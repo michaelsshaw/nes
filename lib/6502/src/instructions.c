@@ -1,27 +1,3 @@
-/*
- * MIT License
- *
- * Copyright 2021 Michael Shaw
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 #include <instructions.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -88,6 +64,9 @@ INS_DECL(asl) //
 
     MEMSET(addr, m);
 
+    if (ADM == ADDR_ABX)
+        CSET(7);
+
     SETFLAGC(CPU, FLAG_Z, m == 0);
     SETFLAGC(CPU, FLAG_N, NEG8(m));
 }
@@ -107,9 +86,9 @@ INS_DECL(bcc) //
 {
     if (!GETFLAG(CPU, FLAG_C))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
         PC = addr;
     }
 }
@@ -118,9 +97,9 @@ INS_DECL(bcs) //
 {
     if (GETFLAG(CPU, FLAG_C))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
         PC = (addr);
     }
 }
@@ -129,9 +108,9 @@ INS_DECL(beq) //
 {
     if (GETFLAG(CPU, FLAG_Z))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
 
         PC = (addr);
     }
@@ -153,9 +132,9 @@ INS_DECL(bmi) //
 {
     if (GETFLAG(CPU, FLAG_N))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
 
         PC = (addr);
     }
@@ -168,9 +147,9 @@ INS_DECL(bne) //
 {
     if (!GETFLAG(CPU, FLAG_Z))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
 
         if ((PC - 2) == addr)
         {
@@ -185,9 +164,9 @@ INS_DECL(bpl) //
 {
     if (!GETFLAG(CPU, FLAG_N))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
 
         PC = (addr);
     }
@@ -204,6 +183,8 @@ INS_DECL(brk) //
     u8 ll = MEM(0xFFFE);
     u8 hh = MEM(0xFFFF);
 
+    CYCLE;
+
     PC = (hh << 0x08) | ll;
 }
 
@@ -211,9 +192,9 @@ INS_DECL(bvc) //
 {
     if (!GETFLAG(CPU, FLAG_V))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
 
         PC = (addr);
     }
@@ -223,9 +204,9 @@ INS_DECL(bvs) //
 {
     if (GETFLAG(CPU, FLAG_V))
     {
-        if (((PC + addr) & 0xFF00) != (PC & 0xFF00))
-            CYCLE; // PAGE CROSS
         CYCLE;
+        if (((addr)&0xFF00) != (PC & 0xFF00))
+            CYCLE; // PAGE CROSS
 
         PC = (addr);
     }
@@ -254,7 +235,6 @@ INS_DECL(clv) //
     CLFLAG(CPU, FLAG_V);
     CYCLE;
 }
-#include <stdio.h>
 INS_DECL(cmp) //
 {
     u8 m = MEM(addr);
@@ -373,7 +353,6 @@ INS_DECL(jsr) //
     PC = addr;
 
     CYCLE;
-    CYCLE;
 }
 
 INS_DECL(lda) //
@@ -413,6 +392,9 @@ INS_DECL(lsr) //
     CLFLAG(CPU, FLAG_N);
 
     MEMSET(addr, m);
+
+    if (ADM == ADDR_ABX)
+        CSET(7);
 }
 
 INS_DECL(lsr_a) //
@@ -428,7 +410,6 @@ INS_DECL(lsr_a) //
 
 INS_DECL(nop) //
 {
-    CYCLE;
     CYCLE;
 }
 
@@ -556,6 +537,7 @@ INS_DECL(rts) //
 
     PC = f + 1;
 
+    CYCLE;
     CYCLE;
     CYCLE;
 }

@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['main_8',['main',['../nes_8c.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'nes.c']]],
-  ['mapper_2eh_9',['mapper.h',['../mapper_8h.html',1,'']]],
-  ['mappers_10',['mappers',['../nes_8h.html#a5d3e4c8018e71bd736bf7436ba175a20',1,'nes']]]
+  ['fstoggle_13',['fstoggle',['../ppu_8h.html#a66cf7d78489755b4c9225937ecc86e27',1,'ppu']]],
+  ['fw_14',['fw',['../ppu_8h.html#ab93966a6c97229712f7b560102f663c9',1,'ppu']]],
+  ['fxscroll_15',['fxscroll',['../ppu_8h.html#a6d4a776a4165589abcebd0058d876510',1,'ppu']]]
 ];

@@ -31,3 +31,25 @@ MAP_FUNC(00)
 
     return (mem + addr);
 }
+
+MAP_FUNC(01)
+{
+    MODE(MAP_MODE_CPU)
+    {
+        IFINRANGE(addr, 0x6000, 0x7FFF)
+        {
+            return nes->cartridge.prg_ram + (addr - 0x6000);
+        }
+
+        IFINRANGE(addr, 0x8000, 0xBFFF)
+        {
+        }
+    }
+
+    MODE(MAP_MODE_PPU)
+    {
+
+    }
+
+    return (mem + addr);
+}

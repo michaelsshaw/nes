@@ -74,7 +74,6 @@ struct cpu
     void *cpu_write;
     void *cpu_read;
 
-
     int echooff;
 };
 typedef u8 *(*f_cpu_read)(struct cpu *cpu, u16 addr);

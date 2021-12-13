@@ -1,33 +1,9 @@
-/*
- * MIT License
- *
- * Copyright 2021 Michael Shaw
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 #include <cpu.h>
 
 #include <addrmodes.h>
 #include <stdio.h>
 
-#define CPU cpu
+#define CPU       cpu
 #define PC        CPU->PC
 #define AC        CPU->A
 #define X         CPU->X
@@ -59,8 +35,8 @@ ADM_DECL(abs) // +2 cycles
 ADM_DECL(absX) // +2* cycles
 {
     u8  ll = MEM(PC);
-    u8 hh = MEM(PC + 1);
-    u16 r = ((hh << 0x08) | ll) + X;
+    u8  hh = MEM(PC + 1);
+    u16 r  = ((hh << 0x08) | ll) + X;
     // noprintf("$%02x%02x,X -- (%04x)", hh, ll, r);
     PC += 2;
     MODE(ADDR_ABX);
@@ -71,8 +47,8 @@ ADM_DECL(absX) // +2* cycles
 ADM_DECL(absY) // +2* cycles
 {
     u8  ll = MEM(PC);
-    u8 hh = MEM(PC + 1);
-    u16 r = ((hh << 0x08) | ll) + Y;
+    u8  hh = MEM(PC + 1);
+    u16 r  = ((hh << 0x08) | ll) + Y;
     // noprintf("$%02x%02x,Y -- (%04x)", hh, ll, r);
     PC += 2;
     MODE(ADDR_ABY);
@@ -83,7 +59,6 @@ ADM_DECL(absY) // +2* cycles
 ADM_DECL(imm) // +0 cycles
 {
     // noprintf("#$%02x", MEM(PC));
-    CPU->cycles += cpu_echooff - 1;
     PC += 1;
     MODE(ADDR_IMM);
     return (PC - 1);
@@ -100,7 +75,15 @@ ADM_DECL(ind) // +4 cycles
     u8 hh = MEM(PC + 1);
 
     u16 aa = ((hh << 0x08) | ll);
-    u16 r  = (MEM((aa + 1)) << 0x08) | (MEM(aa));
+    u16 r;
+    if (ll == 0xFF)
+    {
+        r = ((MEM(aa & 0xFF00) << 8) | MEM(aa));
+    }
+    else
+    {
+        r = (MEM((aa + 1)) << 0x08) | (MEM(aa));
+    }
     // noprintf("($%02x%02x)", hh, ll);
     PC += 2;
     MODE(ADDR_IND);
@@ -109,11 +92,12 @@ ADM_DECL(ind) // +4 cycles
 
 ADM_DECL(Xind) // +2 cycles
 {
-    u8  ll = MEM(PC);
+    u8 ll = MEM(PC);
     u8 a1 = ll + X + 1;
-    u8 a = ll + X ;
-    
+    u8 a  = ll + X;
+
     u16 r = (MEM(a1) << 0x08) | MEM(a);
+    CYCLE;
     // noprintf("(%02x,X) -- (%02x)", ll, r);
     PC += 1;
     MODE(ADDR_XIN);
@@ -122,10 +106,17 @@ ADM_DECL(Xind) // +2 cycles
 
 ADM_DECL(indY) // +3* cycles
 {
-    u8  ll = MEM(PC);
-    u16 r = ((MEM(ll + 1) << 0x08) | MEM(ll)) + Y;
+    u16 t = 0x0000 | MEM(PC);
+
+    u16 lo = 0x0000 | MEM(t & 0xFF);
+    u16 hi = 0x0000 | MEM((t + 1) & 0xFF);
+
+    u16 r = (hi << 8) | lo;
+    r += Y;
+
     // noprintf("(%02x),Y -- (%02x)", ll, r);
-    if (ll + Y > 0xFF)
+    if (lo + Y > 0xFF)
+
         CYCLE; // PAGE BOUNDARY CROSS
     PC += 1;
     MODE(ADDR_INY);
@@ -160,8 +151,8 @@ ADM_DECL(zpg) // +1 cycle
 }
 ADM_DECL(zpgX) // +2 cycles
 {
-    u8 bb = MEM(PC);
-    u16 r = 0x00FF & (bb + X);
+    u8  bb = MEM(PC);
+    u16 r  = 0x00FF & (bb + X);
     // noprintf("$%02x,X -- (%04x)", bb, r);
 
     PC += 1;
@@ -171,8 +162,8 @@ ADM_DECL(zpgX) // +2 cycles
 }
 ADM_DECL(zpgY) // +2 cycles
 {
-    u8 bb = MEM(PC);
-    u16 r = 0x00FF & (bb + Y);
+    u8  bb = MEM(PC);
+    u16 r  = 0x00FF & (bb + Y);
     // noprintf("$%02x,X -- (%04x)", bb, r);
 
     PC += 1;

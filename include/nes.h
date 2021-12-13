@@ -88,6 +88,7 @@ struct nes
 
         u8 *prg;
         u8 *chr;
+        u8 prg_ram[0x2000];
     } cartridge; //!< Contains all ROM cartridge data
 
     u16 mirror;
@@ -101,6 +102,10 @@ struct nes
     u32 pixels[NES_WIDTH * NES_HEIGHT];
 
     uint64_t cycle;
+
+    u8 pal;
+    u8 btns;
+    u8 btn_latch;
 };
 
 void

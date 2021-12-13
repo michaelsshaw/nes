@@ -37,19 +37,21 @@
 
 #define PTSETPIXEL(_pt, _x, _y, _val) (_pt)[(_x) + (_y)*128] = (_val)
 #define PCOLREAD(_pal, _pix)                                                   \
-    PAL[ppu_read(ppu, 0x3F00 + ((_pal) << 0x02) + _pix) & 0x3F]
+    PAL[ppu_read(ppu, 0x3F00 + ((_pal) << 0x02) + _pix)]
 
 #define PPUFLAG(_ppu, _reg, _flag)    ((_ppu->registers._reg & (_flag)) ? 1 : 0)
 #define PPUSETFLAG(_ppu, _reg, _mask) _ppu->registers._reg |= (_mask)
 #define CLPPUFLAG(_ppu, _reg, _mask)  _ppu->registers._reg &= (~(_mask))
 
 #define RESET_SHIFTERS(_ppu)                                                   \
-    _ppu->bg_shift_plo = (_ppu->bg_shift_plo & 0xFF00) | (_ppu->bg_lsb);       \
-    _ppu->bg_shift_phi = (_ppu->bg_shift_phi & 0xFF00) | (_ppu->bg_msb);       \
-    _ppu->bg_shift_alo =                                                       \
-      (_ppu->bg_shift_alo & 0xFF00) | ((_ppu->bg_at & 0x01) ? 0xFF : 0x00);    \
-    _ppu->bg_shift_ahi =                                                       \
-      (_ppu->bg_shift_ahi & 0xFF00) | ((_ppu->bg_at & 0x02) ? 0xFF : 0x00);
+    {                                                                          \
+        _ppu->bg_shift_plo = (_ppu->bg_shift_plo & 0xFF00) | (_ppu->bg_lsb);   \
+        _ppu->bg_shift_phi = (_ppu->bg_shift_phi & 0xFF00) | (_ppu->bg_msb);   \
+        _ppu->bg_shift_alo = (_ppu->bg_shift_alo & 0xFF00) |                   \
+                             ((_ppu->bg_at & 0x01) > 0 ? 0xFF : 0x00);         \
+        _ppu->bg_shift_ahi = (_ppu->bg_shift_ahi & 0xFF00) |                   \
+                             ((_ppu->bg_at & 0x02) > 0 ? 0xFF : 0x00);         \
+    }
 
 #define UPDATE_SHIFTERS(_ppu)                                                  \
     if (_ppu->registers.ppumask & PPUMASK_b)                                   \
@@ -77,6 +79,11 @@
         _ppu->vaddr &= (~_taymask);                                            \
         _ppu->vaddr |= (_ppu->taddr & _taymask);                               \
     }
+
+#define BYTE_FLIP(_i)                                                          \
+    _i = (_i & 0xF0) >> 4 | (_i & 0x0F) << 4;                                  \
+    _i = (_i & 0xCC) >> 2 | (_i & 0x33) << 2;                                  \
+    _i = (_i & 0xAA) >> 1 | (_i & 0x55) << 1;
 
 void
 ppu_debug_print_oam(struct ppu *ppu)
@@ -118,14 +125,18 @@ ppu_cpu_read(struct ppu *ppu, u16 addr)
             break;
         case OAMDATA: // $2004
             r = ppu->oam[ppu->registers.oamaddr];
-            if (!PPUFLAG(ppu, ppustatus, PPUSTATUS_V))
-                ppu->registers.oamaddr += 1;
             break;
         case PPUDATA: // $2007
-            r         = ppu->data;
-            ppu->data = ppu_read(ppu, ppu->vaddr);
             if (ppu->vaddr >= 0x3F00)
-                r = ppu->data;
+            {
+                ppu->data = ppu_read(ppu, ppu->vaddr - 0x1000);
+                r         = ppu_read(ppu, ppu->vaddr);
+            }
+            else
+            {
+                r         = ppu->data;
+                ppu->data = ppu_read(ppu, ppu->vaddr);
+            }
 
             ppu->vaddr += PPUFLAG(ppu, ppuctrl, PPUCTRL_I) ? 32 : 1;
             break;
@@ -145,7 +156,11 @@ ppu_cpu_write(struct ppu *ppu, u16 addr, u8 data)
     switch (addr)
     {
         case PPUCTRL: // $2000
-            ppu->registers.ppuctrl = data;
+            ppu->registers.ppuctrl = data & 0xFC;
+            // forgetting this caused me major headache, and slowed this project
+            // down by weeks
+            // clear nametable select
+            ppu->taddr &= (~0x0C00);
             ppu->taddr |= ((d & 0x03) << 10);
             break;
         case PPUMASK: // $2001
@@ -162,11 +177,14 @@ ppu_cpu_write(struct ppu *ppu, u16 addr, u8 data)
             if (ppu->address_latch == 0)
             {
                 ppu->fxscroll = data & 0x07;
-                ppu->taddr = ppu->taddr | ((data >> 3) & 0x1F); // set coarse x
+                ppu->taddr &= (~PPULOOPY_CX);              // clear cx
+                ppu->taddr |= ((data >> 3) & PPULOOPY_CX); // set coarse x
                 ppu->address_latch = 1;
             }
             else
             {
+                // clear fy, cy and set
+                ppu->taddr &= (~(PPULOOPY_CY | PPULOOPY_FY));
                 ppu->taddr |= ((d & 0x07) << 12); // fine y
                 ppu->taddr |= ((d & 0xF8) << 2);  // coarse y
                 ppu->address_latch = 0;
@@ -175,13 +193,12 @@ ppu_cpu_write(struct ppu *ppu, u16 addr, u8 data)
         case PPUADDR: // $2006
             if (ppu->address_latch == 0)
             {
-
                 ppu->taddr         = (ppu->taddr & 0x00FF) | ((d & 0x3F) << 8);
                 ppu->address_latch = 1;
             }
             else
             {
-                ppu->taddr         = (ppu->taddr & 0xFF00) | d;
+                ppu->taddr         = (ppu->taddr & 0xFF00) | data;
                 ppu->vaddr         = ppu->taddr;
                 ppu->address_latch = 0;
             }
@@ -207,14 +224,10 @@ ppu_get_mempointer(struct ppu *ppu, u16 addr)
     else IFINRANGE(addr, 0x3F00, 0x3FFF) // palette readdressing
     {
         u16 taddr = (addr & 0x001F);
-        if (taddr == 0x0010)
-            taddr = 0x0000;
-        if (taddr == 0x0014)
-            taddr = 0x0004;
-        if (taddr == 0x0018)
-            taddr = 0x0008;
-        if (taddr == 0x001C)
-            taddr = 0x000C;
+        if (taddr == 0x0010) taddr = 0x0000;
+        if (taddr == 0x0014) taddr = 0x0004;
+        if (taddr == 0x0018) taddr = 0x0008;
+        if (taddr == 0x001C) taddr = 0x000C;
 
         addr = 0x3F00 + taddr;
         return (mem + addr);
@@ -228,15 +241,18 @@ ppu_get_mempointer(struct ppu *ppu, u16 addr)
 u8
 ppu_read(struct ppu *ppu, u16 addr)
 {
-    u8 *r = ppu_get_mempointer(ppu, addr);
-    return *r;
+    u8 r = *ppu_get_mempointer(ppu, addr);
+    IFINRANGE(addr, 0x3F00, 0x3FFF)
+    {
+        r = r & (PPUFLAG(ppu, ppumask, PPUMASK_G) ? 0x30 : 0x3F);
+    }
+    return r;
 }
 
-void
+inline void
 ppu_write(struct ppu *ppu, u16 addr, u8 val)
 {
-    u8 *m = ppu_get_mempointer(ppu, addr);
-    *m    = val;
+    *ppu_get_mempointer(ppu, addr) = val;
 }
 
 u32 *
@@ -251,6 +267,8 @@ ppu_get_patterntable(struct ppu *ppu, u8 i, u8 pal)
     // each pattern table contains 256 tiles in a 16x16 arrangement
     // each tile is 8x8 pixels
     // loop through 256 tiles
+
+    pal &= 0x07;
 
     FOR(ty, 0, 16)
     {
@@ -281,7 +299,7 @@ ppu_get_patterntable(struct ppu *ppu, u8 i, u8 pal)
     return ppu->pattern_tables_pix[i];
 }
 
-static void
+static inline void
 ppu_scroll_inc_x(struct ppu *ppu)
 {
     if (PPUFLAG(ppu, ppumask, PPUMASK_b) || PPUFLAG(ppu, ppumask, PPUMASK_s))
@@ -298,7 +316,7 @@ ppu_scroll_inc_x(struct ppu *ppu)
     }
 }
 
-static void
+static inline void
 ppu_scroll_inc_y(struct ppu *ppu)
 {
     if (PPUFLAG(ppu, ppumask, PPUMASK_b) || PPUFLAG(ppu, ppumask, PPUMASK_s))
@@ -309,12 +327,12 @@ ppu_scroll_inc_y(struct ppu *ppu)
         }
         else
         {
-            ppu->vaddr = (ppu->vaddr) & (~0x7000);
-            u16 cy     = ((ppu->vaddr) & PPULOOPY_CY) >> 5;
+            ppu->vaddr &= ~(0x7000);
+            u16 cy = ((ppu->vaddr) & PPULOOPY_CY) >> 5;
             if (cy == 29)
             {
-                cy         = 0;
-                ppu->vaddr = (ppu->vaddr) ^ PPULOOPY_Y;
+                cy = 0;
+                ppu->vaddr ^= PPULOOPY_Y;
             }
             else if (cy == 31)
             {
@@ -331,79 +349,89 @@ ppu_scroll_inc_y(struct ppu *ppu)
 void
 ppu_clock(struct ppu *ppu)
 {
-    int cycle    = ppu->cycle;
-    int scanline = ppu->scanline;
-    u16 vaddr    = ppu->vaddr;
-    IFINRANGE(scanline, -1, 239)
+    IFINRANGE(ppu->scanline, -1, 239)
     {
         /*
          * Background rendering ONLY
          */
-        if (scanline == 0 && cycle == 0)
-        {
-            ppu->cycle = 1;
-            cycle      = 1;
-        }
-
-        if (scanline == -1 && cycle == 1)
+        if (ppu->scanline == -1 && ppu->cycle == 1)
         {
             CLPPUFLAG(ppu, ppustatus, PPUSTATUS_V);
+            CLPPUFLAG(ppu, ppustatus, PPUSTATUS_S);
+            CLPPUFLAG(ppu, ppustatus, PPUSTATUS_O);
+
+            memset(ppu->sp_shift_lo, 0, 16);
         }
-        u16 tmp;
-        if (INRANGE(cycle, 2, 257) || INRANGE(cycle, 321, 337))
+        if (INRANGE(ppu->cycle, 1, 256) || INRANGE(ppu->cycle, 321, 336))
         {
+            u16 vaddr = ppu->vaddr & 0x7FFF;
+            u16 tmp;
             UPDATE_SHIFTERS(ppu);
-            switch ((cycle - 1) % 8)
+            switch ((ppu->cycle - 1) & 0x7)
             {
                 case 0:
                     RESET_SHIFTERS(ppu);
                     ppu->bg_id = ppu_read(ppu, 0x2000 | (vaddr & 0x0FFF));
                     break;
                 case 2:
-                    ppu->bg_at = ppu_read(ppu,
-                                          0x23C0                      //
-                                            | ((vaddr)&0x0C00)        //
-                                            | ((vaddr >> 4) & 0x0038) //
-                                            | ((vaddr >> 2) & 0x0007));
-                    if (vaddr & 0x40)
-                        ppu->bg_at >>= 4;
-                    if (vaddr & 0x02)
-                        ppu->bg_at >>= 2;
-                    ppu->bg_at &= 0x03;
+                    if (PPUFLAG(ppu, ppumask, PPUMASK_b))
+                    {
+                        // attributes start at $23C0 on the nametable,
+                        // then we select the nametable (0000 or 0C00 and so
+                        // on..) the coarse y ((vaddr >> 4) & 0x38) high 3 bits
+                        // and the coarse x ((vaddr >> 2) & 0x07) high 3 bits
+                        //
+                        // V:     YYYyyXXXxx
+                        // Addr >   00YYYXXX
+                        u16 addr_att = 0x23C0 | (vaddr & 0x0C00) |
+                                       ((vaddr >> 4) & 0x0038) |
+                                       ((vaddr >> 2) & 0x0007);
+
+                        ppu->bg_at = ppu_read(ppu, addr_att);
+
+                        u8 shift = ((vaddr >> 4) & 0x04) | (vaddr & 0x02);
+                        ppu->bg_at >>= shift;
+                        ppu->bg_at &= 0x03;
+                    }
                     break;
                 case 4:
                     tmp = 0x0000 | (ppu->bg_id);
                     ppu->bg_lsb =
-                      ppu_read(ppu,                                     //
-                               (PPUFLAG(ppu, ppuctrl, PPUCTRL_B) << 12) //
-                                 + (tmp << 4)                           //
+                      ppu_read(ppu,                                          //
+                               ((u16)PPUFLAG(ppu, ppuctrl, PPUCTRL_B) << 12) //
+                                 + (tmp << 4)                                //
                                  + ((vaddr >> 12) & 0x07));
                     break;
                 case 6:
                     tmp = 0x0000 | (ppu->bg_id);
                     ppu->bg_msb =
-                      ppu_read(ppu,                                     //
-                               (PPUFLAG(ppu, ppuctrl, PPUCTRL_B) << 12) //
-                                 + (tmp << 4)                           //
+                      ppu_read(ppu,                                          //
+                               ((u16)PPUFLAG(ppu, ppuctrl, PPUCTRL_B) << 12) //
+                                 + (tmp << 4)                                //
                                  + ((vaddr >> 12) & 0x07) + 8);
                     break;
                 case 7:
                     ppu_scroll_inc_x(ppu);
                     break;
             }
-        }
-        if (cycle == 256)
-        {
-            ppu_scroll_inc_y(ppu);
+            if (ppu->cycle == 256)
+            {
+                ppu_scroll_inc_y(ppu);
+            }
         }
 
-        if (cycle == 257)
+        if (ppu->cycle == 257)
         {
             RESET_SHIFTERS(ppu);
             TAX(ppu);
         }
 
-        if (scanline == -1 && INRANGE(cycle, 280, 304))
+        if (ppu->cycle == 338 || ppu->cycle == 340)
+        {
+            ppu->bg_id = ppu_read(ppu, 0x2000 | (ppu->vaddr & 0x0FFF));
+        }
+
+        if (ppu->scanline == -1 && INRANGE(ppu->cycle, 280, 304))
         {
             TAY(ppu);
         }
@@ -415,18 +443,18 @@ ppu_clock(struct ppu *ppu)
      * kept in a separate loop to keep readable :)
      * i hope the compiler optimizes this
      */
-    IFINRANGE(scanline, 0, 239)
+    IFINRANGE(ppu->scanline, 0, 239)
     {
 
         /*
          * S-OAM init to $FF
          *
-         * Technically this takes 64 cycles to complete
+         * Technically this takes 64 ppu->cycles to complete
          * because of the memory write speeds, but the computer
          * running this program isn't a NES so....
          */
 
-        if (cycle == 1)
+        if (ppu->cycle == 1)
         {
             memset(ppu->soam, 0xFF, 32);
             ppu->n_oam              = 0;
@@ -441,23 +469,28 @@ ppu_clock(struct ppu *ppu)
          * SPRITE EVALUATION (for the next line)
          */
 
-        IFINRANGE(cycle, 65, 256)
+        IFINRANGE(ppu->cycle, 65, 256)
         {
-            u16 tcycle = cycle - 64;
+            u16 tcycle = ppu->cycle - 64;
 
             if (tcycle & 0x0001) // read on odd cycles
             {
                 // this is the data we will either write to S-OAM or pass on
-                // next cycle(because we only write on even cycles)
+                // next ppu->cycle(because we only write on even cycles)
                 ppu->soam_latch = ppu->oam[ppu->n_oam * 4 + ppu->m_oam];
-                int16_t diff = ((int16_t)scanline - (int16_t)ppu->soam_latch);
+                int16_t diff =
+                  ((int16_t)ppu->scanline - (int16_t)ppu->soam_latch);
                 if (ppu->m_oam == 0)
                 {
-                    // tell the ppu to write to the soam next 7 cycles
+                    // tell the ppu to write to the soam next 7 ppu->cycles
                     // if the sprite is in range
-                    IFINRANGE(diff, 0, 7)
+                    IFINRANGE(diff, 0, 7 + 8 * PPUFLAG(ppu, ppuctrl, PPUCTRL_H))
                     { //
                         ppu->soam_true = 1;
+                        if (ppu->n_oam == 0)
+                        {
+                            ppu->inc_sprite0 = 1;
+                        }
                     }
                     else
                     {
@@ -467,7 +500,7 @@ ppu_clock(struct ppu *ppu)
                     }
                 }
             }
-            else // write on even cycles
+            else // write on even ppu->cycles
             {
                 u8 y = ppu->soam_latch;
 
@@ -513,10 +546,10 @@ ppu_clock(struct ppu *ppu)
          * registers that we can actually use to render data
          */
 
-        IFINRANGE(cycle, 257, 320) //
+        IFINRANGE(ppu->cycle, 257, 320) //
         {
-            // 8 sprites total, 8 cycles per sprite
-            u16 tcycle = cycle - 257; // 0-63
+            // 8 sprites total, 8 ppu->cycles per sprite
+            u16 tcycle = ppu->cycle - 257; // 0-63
 
             // since the temp variables aren't used anymore (i_soam, n_oam,
             // m_oam) we are safe to use them here
@@ -534,28 +567,54 @@ ppu_clock(struct ppu *ppu)
                 switch (rm)
                 {
                     case 0:
-                    case 1:
-                        u16 addr = //
-                          ((ppu->soam[sindex * 4 + 1]
-                            << 4) // which sprite in the table
-                           | (scanline - ppu->soam[sindex * 4]) // offset by y
-                           | (PPUFLAG(ppu, ppuctrl, PPUCTRL_S) << 12)) +
-                          rm * 8;
-                        out = ppu_read(ppu, addr);
-                        break;
-                    case 2:
                         out = ppu->soam[sindex * 4 + 2];
                         break;
-                    case 3:
+                    case 1:
                         out = ppu->soam[sindex * 4 + 3];
+                        break;
+                    case 2:
+                    case 3:
+                        u16 addr;
+                        u8  attr = (ppu->soam[sindex * 4 + 2]);
+                        u8  h    = PPUFLAG(ppu, ppuctrl, PPUCTRL_H);
+                        if (h)
+                        {
+                            addr     = ppu->soam[sindex * 4 + 1];
+                            u16 bank = (addr & 0x01) << 12;
+                            addr &= 0xFE;
+                            addr += (rm - 1);
+                            addr <<= 4;
+                            u16 ypos =
+                              0x0000 | (ppu->scanline - ppu->soam[sindex * 4]);
+
+                            if (attr & 0x80) ypos = 7 - ypos;
+                            addr |= ypos;
+                            addr |= bank;
+                        }
+                        else
+                        {
+                            addr = //
+                              ((ppu->soam[sindex * 4 + 1]
+                                << 4) // which sprite in the table
+                               | (ppu->scanline -
+                                  ppu->soam[sindex * 4]) // offset by y
+                               | (PPUFLAG(ppu, ppuctrl, PPUCTRL_S) << 12)) +
+                              (rm - 2) * 8;
+                        }
+
+                        out = ppu_read(ppu, addr);
+                        if (attr & 0x40)
+                        {
+                            BYTE_FLIP(out);
+                        }
                         break;
                 }
 
                 ppu->soam_latch = out;
             }
-            else // we're writing on odd cycles
+            else // we're writing on odd ppu->cycles
             {
-                u8 *loc = (u8 *)(&ppu->sp_shift_lo);
+                u8 *loc = (u8 *)(&ppu->sp_latch);
                 loc += rm * 8;
                 loc += sindex;
 
@@ -563,7 +622,7 @@ ppu_clock(struct ppu *ppu)
             }
         }
     }
-    /*    if (scanline == 26 && cycle == 320)
+    /*    if (ppu->scanline == 26 && ppu->cycle == 320)
         {
             ppu_debug_print_oam(ppu);
             for (int i = 0; i < 8; i++)
@@ -579,7 +638,7 @@ ppu_clock(struct ppu *ppu)
     /*
      * Cause a CPU NMI if NMI enable flag is 1
      */
-    if (scanline == 241 && cycle == 1)
+    if (ppu->scanline == 241 && ppu->cycle == 1)
     {
         PPUSETFLAG(ppu, ppustatus, PPUSTATUS_V);
         if (PPUFLAG(ppu, ppuctrl, PPUCTRL_V))
@@ -604,8 +663,7 @@ ppu_clock(struct ppu *ppu)
         bgpal = (pal1 << 1) | pal0;
     }
 
-    if (bgpix == 0)
-        bgpal = 0;
+    if (bgpix == 0) bgpal = 0;
 
     if (PPUFLAG(ppu, ppumask, PPUMASK_s))
     {
@@ -614,15 +672,38 @@ ppu_clock(struct ppu *ppu)
             if (ppu->sp_counter[i] == 0)
             // if it is at current x and has priority
             {
+                u8 lo = ppu->sp_shift_lo[i];
+                u8 hi = ppu->sp_shift_hi[i];
 
-                u8 pat0 = (ppu->sp_shift_lo[i] & 0x80) > 0;
-                u8 pat1 = (ppu->sp_shift_hi[i] & 0x80) > 0;
+                u8 pat0 = (lo & 0x80) > 0;
+                u8 pat1 = (hi & 0x80) > 0;
 
                 u8 pal = (ppu->sp_latch[i] & 0x03) + 4;
 
                 u8 pix = (pat1 << 1) | pat0;
+
+                // we only output a sprite pixel given the following conditions:
+                //
+                // 1. the sprite pixel is not zero AND one of the following:
+                //
+                // 2. the background pixel is zero
+                // 3. the sprite has priority(0 indicates priority) over the
+                //    background
+                //
+                // sorry for overexplaining this statement :^)
+                if (pix > 0 && bgpix > 0 && i == 0 && ppu->inc_sprite0 //
+                    && !INRANGE(ppu->cycle, 1, 8) &&
+                    PPUFLAG(ppu, ppumask, PPUMASK_b))
+                {
+                    if ((INRANGE(ppu->cycle, 9, 257) &&
+                         !(ppu->registers.ppumask & 0x06)) || //
+                        (INRANGE(ppu->cycle, 1, 258) &&
+                         (ppu->registers.ppumask & 0x06)))
+                        PPUSETFLAG(ppu, ppustatus, PPUSTATUS_S); // set sprite 0
+                }
                 if (pix > 0 &&
-                    (bgpix == 0 || (pix & ppu->sp_latch[i] & 0x20) == 0))
+                    (bgpix == 0 || ((ppu->sp_latch[i] & 0x20) == 0)) &&
+                    ppu->cycle < 256)
                 {
                     bgpix = pix;
                     bgpal = pal;
@@ -632,14 +713,14 @@ ppu_clock(struct ppu *ppu)
     }
 
     struct nes *nes = ppu->fw;
-    if (INRANGE((cycle - 1), 0, NES_WIDTH - 1) &&
-        INRANGE(scanline, 0, NES_HEIGHT - 1) && 1)
+    if (INRANGE((ppu->cycle - 1), 0, NES_WIDTH - 1) &&
+        INRANGE(ppu->scanline, 0, NES_HEIGHT - 1) && 1)
     {
-        nes->pixels[(cycle - 1) + scanline * NES_WIDTH] =
-          PCOLREAD(bgpal, bgpix);
+        u32 pix = PCOLREAD(bgpal, bgpix);
+        nes->pixels[(ppu->cycle - 1) + ppu->scanline * NES_WIDTH] = pix;
     }
 
-    IFINRANGE(cycle, 1, 256)
+    IFINRANGE(ppu->cycle, 1, 256)
     {
         for (u8 i = 0; i < 8; i++)
         {
@@ -756,8 +837,17 @@ ppu_init(struct ppu *ppu)
 
     ppu->address_latch = 0;
 
-    ppu->scanline = -1;
-    ppu->cycle    = 30;
+    ppu->scanline = 0;
+    ppu->cycle    = 0;
+
+    ppu->bg_at        = 0;
+    ppu->bg_id        = 0;
+    ppu->bg_lsb       = 0;
+    ppu->bg_msb       = 0;
+    ppu->bg_shift_plo = 0;
+    ppu->bg_shift_phi = 0;
+    ppu->bg_shift_alo = 0;
+    ppu->bg_shift_ahi = 0;
 
     pal_init(ppu);
 }

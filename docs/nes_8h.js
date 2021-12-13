@@ -8,7 +8,8 @@ var nes_8h =
       [ "mappers", "nes_8h.html#a5d3e4c8018e71bd736bf7436ba175a20", null ],
       [ "offs", "nes_8h.html#a7eef0f1461d0f2b484b3b2620d962468", null ],
       [ "enable", "nes_8h.html#ace8eaef3664ef463ab8a0094a698d754", null ],
-      [ "pixels", "nes_8h.html#a89d4f4e2ceec3a80594cd8de66c7aeab", null ]
+      [ "pixels", "nes_8h.html#a89d4f4e2ceec3a80594cd8de66c7aeab", null ],
+      [ "cycle", "nes_8h.html#a1f692aede2a5325dda0c764e2a0f4d40", null ]
     ] ],
     [ "nes.cartridge", "nes_8h.html#structnes_8cartridge", [
       [ "mapper", "nes_8h.html#a4b9f83e1257a95912768124924dfb143", null ],

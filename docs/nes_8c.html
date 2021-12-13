@@ -138,8 +138,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>mappers_init</b> ()</
 <tr class="separator:a1e4a6eda8c8b77e8b78baa5b193974b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a09fd89da825845f6dcc353cbc3b75015"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#a09fd89da825845f6dcc353cbc3b75015">nes_time_get</a> ()</td></tr>
 <tr class="separator:a09fd89da825845f6dcc353cbc3b75015"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d731f05cc2df7c0eed648a694bd6f37"><td class="memItemLeft" align="right" valign="top"><a id="a5d731f05cc2df7c0eed648a694bd6f37"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>nes_game_loop</b> (void *in)</td></tr>
+<tr class="memitem:a5d731f05cc2df7c0eed648a694bd6f37"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#a5d731f05cc2df7c0eed648a694bd6f37">nes_game_loop</a> (void *in)</td></tr>
 <tr class="separator:a5d731f05cc2df7c0eed648a694bd6f37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b9d28b52191e7fc5270b408ee08ffb3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="nes_8c.html#a8b9d28b52191e7fc5270b408ee08ffb3">nes_window_loop</a> (struct <a class="el" href="nes_8h.html#structnes">nes</a> *<a class="el" href="nes_8h.html#structnes">nes</a>)</td></tr>
 <tr class="separator:a8b9d28b52191e7fc5270b408ee08ffb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -222,6 +221,34 @@ struct <a class="el" href="nes_8h.html#structnes">nes</a> *&#160;</td><td class=
 
 </div>
 </div>
+<a id="a5d731f05cc2df7c0eed648a694bd6f37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d731f05cc2df7c0eed648a694bd6f37">&#9670;&nbsp;</a></span>nes_game_loop()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int nes_game_loop </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>in</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Infinite loop for running actual CPU, PPU and APU logic</p>
+<p>Times the loop so that the clock speed of the CPU is 1.79MHz</p>
+<p>Runs 3 ppu clocks then runs a single CPU clock, as was the timing on the original NES</p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="ppu_8h.html#ac8ee6d700af2d8612723910bd7d37de8">ppu_clock</a></dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">in</td><td>Void pointer to a struct nes </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="a8b9d28b52191e7fc5270b408ee08ffb3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8b9d28b52191e7fc5270b408ee08ffb3">&#9670;&nbsp;</a></span>nes_window_loop()</h2>
 
@@ -238,13 +265,13 @@ struct <a class="el" href="nes_8h.html#structnes">nes</a> *&#160;</td><td class=
       </table>
 </div><div class="memdoc">
 <p>Main window loop for the entire NES program.</p>
+<p>Creates a second thread that runs a concurrent infinite loop in <a class="el" href="nes_8c.html#a5d731f05cc2df7c0eed648a694bd6f37">nes_game_loop</a></p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">nes</td><td>NES data structure for this window </td></tr>
   </table>
   </dd>
 </dl>
-<p>Second thread for actual NES operation The current thread is for SDL only</p>
 
 </div>
 </div>

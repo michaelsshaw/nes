@@ -83,6 +83,18 @@ nes_cpu_read(struct cpu *cpu, u16 addr)
         return ppu_cpu_read(em->ppu, addr);
     }
 
+    if (addr == 0x4016)
+    {
+        u8 r   = *(MM + addr);
+        u8 tmp = (em->btn_latch & 0x80) > 0;
+        r &= 0xE0;
+        r |= (tmp);
+        em->btn_latch <<= 1;
+        em->btn_latch |= tmp;
+
+        return r;
+    }
+
     return *MAP_CALL(em, em->cartridge.mapper, addr, MM, MAP_MODE_CPU);
 }
 
@@ -104,7 +116,7 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
     else if (addr == 0x4014) // OAM DMA
     {
         // Takes a few cycles to do this, so just delay things
-        cpu->cycles += 513 + (em->cycle % 2 == 1 ? 1 : 0);
+        cpu->cycles += 513 + ((em->cycle & 1) == 1 ? 1 : 0);
 
         // Example:
         // lda $XX
@@ -115,17 +127,18 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
 
         struct ppu *ppu = em->ppu;
 
-        u16 naddr = 0x0000 | val;
-        naddr <<= 8;
-        naddr |= ppu->registers.oamaddr;
-
-        u16 faddr = naddr | 0xFF;
-
-        for (; naddr <= faddr; naddr++)
+        u16 hi = 0x0000 | val;
+        hi <<= 8;
+        u16 i;
+        for (i = 0; i <= 0xFF; i++)
         {
-            ppu->oam[naddr & 0x00FF] = nes_cpu_read(CPU, naddr);
+            ppu->oam[(i + ppu->registers.oamaddr)] = nes_cpu_read(CPU, hi | i);
         }
-
+        return;
+    }
+    else if (addr == 0x4016 && (val & 0x01) == 0x00)
+    {
+        em->btn_latch = em->btns;
         return;
     }
     else

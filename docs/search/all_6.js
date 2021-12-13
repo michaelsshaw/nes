@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['registers_33',['registers',['../ppu_8h.html#a51a799183a872f5a0469d2c2d393ff30',1,'ppu']]]
+  ['oam_30',['oam',['../ppu_8h.html#a59a77a12c59a89d93a77d5a158502eee',1,'ppu']]]
 ];

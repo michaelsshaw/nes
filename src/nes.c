@@ -47,11 +47,20 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+#define NES_BTN_A   0x80
+#define NES_BTN_B   0x40
+#define NES_BTN_SEL 0x20
+#define NES_BTN_STR 0x10
+#define NES_BTN_UP  0x08
+#define NES_BTN_DN  0x04
+#define NES_BTN_LF  0x02
+#define NES_BTN_RT  0x01
+
 #define ASPECT   (16 / 15)
 #define ALTN(_n) ((_n) = (_n) == 0 ? 1 : 0)
 
 #define ONE_BILLION           1000000000
-#define NES_CPU_CLOCKS_SECOND 1790000
+#define NES_CPU_CLOCKS_SECOND (1790000 * 3)
 #define NS_CLOCK              ONE_BILLION / NES_CPU_CLOCKS_SECOND
 #define NS_FRAME              ONE_BILLION / 60
 
@@ -59,6 +68,48 @@
     struct SDL_Rect nesrect_##_name = {                                        \
         .x = (_x), .y = (_y), .w = (_w), .h = (_h)                             \
     }
+
+// use BUTTON_SET(btnreg, NES_BTN_A, |); to set
+// or  BUTTON_SET(btnreg, NES_BTN_A, & ~); to clear
+#define BUTTON_SET(_reg, _btn, _op) ((_reg) = ((_reg)_op(_btn)))
+
+// i don't wanna type this twice(once for keyup, once for keydown
+#define BUTTON_AUTOSET(_reg, _op)                                              \
+    switch (ev.key.keysym.sym)                                                 \
+    {                                                                          \
+        case SDLK_LEFT:                                                        \
+            BUTTON_SET((_reg), NES_BTN_LF, _op);                               \
+            break;                                                             \
+        case SDLK_RIGHT:                                                       \
+            BUTTON_SET((_reg), NES_BTN_RT, _op);                               \
+            break;                                                             \
+                                                                               \
+        case SDLK_UP:                                                          \
+            BUTTON_SET((_reg), NES_BTN_UP, _op);                               \
+            break;                                                             \
+        case SDLK_DOWN:                                                        \
+            BUTTON_SET((_reg), NES_BTN_DN, _op);                               \
+            break;                                                             \
+        case SDLK_BACKSPACE:                                                   \
+            BUTTON_SET((_reg), NES_BTN_SEL, _op);                              \
+            break;                                                             \
+        case SDLK_RETURN:                                                      \
+            BUTTON_SET((_reg), NES_BTN_STR, _op);                              \
+            break;                                                             \
+        case SDLK_z:                                                           \
+            BUTTON_SET((_reg), NES_BTN_A, _op);                                \
+            break;                                                             \
+        case SDLK_x:                                                           \
+            BUTTON_SET((_reg), NES_BTN_B, _op);                                \
+            break;                                                             \
+    }
+
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)                                                   \
+    (byte & 0x80 ? '1' : '0'), (byte & 0x40 ? '1' : '0'),                      \
+      (byte & 0x20 ? '1' : '0'), (byte & 0x10 ? '1' : '0'),                    \
+      (byte & 0x08 ? '1' : '0'), (byte & 0x04 ? '1' : '0'),                    \
+      (byte & 0x02 ? '1' : '0'), (byte & 0x01 ? '1' : '0')
 
 struct nes *NES;
 
@@ -103,23 +154,36 @@ nes_game_loop(void *in)
     uint64_t last = 0;
     uint64_t now  = 0;
 
+    u8  enable = 0;
+    u32 count  = 0;
+
     while (nes->enable)
     {
         now = nes_time_get();
 
-        if (now - last < NS_CLOCK)
-            continue;
+        if (now - last < NS_CLOCK) continue;
 
-        ppu_clock(nes->ppu);
-        ppu_clock(nes->ppu);
         ppu_clock(nes->ppu);
 
         if (nes->ppu->nmi)
         {
             nes->ppu->nmi = 0;
             cpu_nmi(nes->cpu);
+            enable = 1;
+
+            count = 0;
         }
-        cpu_clock(nes->cpu);
+        if (nes->cycle % 3 == 0)
+        {
+            count += 1;
+            cpu_clock(nes->cpu);
+        }
+
+        if (enable && (nes->ppu->registers.ppustatus & 0x80) == 0)
+        {
+            enable = 0;
+            // printf("%d\n", count);
+        }
 
         nes->cycle += 1;
         last = now;
@@ -145,6 +209,7 @@ nes_window_loop(struct nes *nes)
     const int ts      = w_pt * h_pt;
 
     int WINDOW_HEIGHT = 900;
+    float SCALE = WINDOW_HEIGHT / NES_HEIGHT;
     int NES_OUT_WIDTH = WINDOW_HEIGHT * ASPECT;
     int WINDOW_WIDTH  = NES_OUT_WIDTH //
                        + padding      // nesview padding;
@@ -225,8 +290,7 @@ nes_window_loop(struct nes *nes)
      * The current thread is for SDL only
      */
 
-    SDL_Thread *thread =
-      SDL_CreateThread(nes_game_loop, "NES_GAME_LOOP", (void *)nes);
+    SDL_CreateThread(nes_game_loop, "NES_GAME_LOOP", (void *)nes);
 
     //
     // Infinite loop timing
@@ -235,12 +299,15 @@ nes_window_loop(struct nes *nes)
     uint64_t last = 0;
     uint64_t now  = 0;
 
+    // init the buttons
+    nes->btns      = 0x00;
+    nes->btn_latch = 0x00;
+
     for (;;)
     {
         now = nes_time_get();
 
-        if (now - last < NS_CLOCK)
-            continue;
+        if (now - last < NS_CLOCK) continue;
 
         SDL_SetRenderDrawColor(renderer, 80, 190, 190, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
@@ -254,11 +321,16 @@ nes_window_loop(struct nes *nes)
             }
             if (ev.type == SDL_KEYDOWN)
             {
+                BUTTON_AUTOSET(nes->btns, |);
                 switch (ev.key.keysym.sym)
                 {
                     case SDLK_f:
                         break;
                 }
+            }
+            if (ev.type == SDL_KEYUP)
+            {
+                BUTTON_AUTOSET(nes->btns, &~);
             }
         }
 
@@ -274,7 +346,8 @@ nes_window_loop(struct nes *nes)
                 u8  pix    = ppu_read(nes->ppu, ntaddr);
 
                 u8  pvl    = ppu_read(nes->ppu, (pix << 4) + (y % 8));
-                u8  pvh    = ppu_read(nes->ppu, (pix << 4) + (y % 8) + 0x08);
+                u8  pvh    = ppu_read(nes->ppu, (pix << 4) + (y % 8) +
+        0x08);
 
                 pvl >>= (7 - x % 8);
                 pvh >>= (7 - x % 8);
@@ -289,10 +362,10 @@ nes_window_loop(struct nes *nes)
         // Update the PT pixels and textures
         //
 
-        pix_pt0 = ppu_get_patterntable(nes->ppu, 0, 0);
+        pix_pt0 = ppu_get_patterntable(nes->ppu, 0, nes->pal);
         SDL_UpdateTexture(tex_pt0, NULL, pix_pt0, w_pt * 4);
 
-        pix_pt1 = ppu_get_patterntable(nes->ppu, 1, 0);
+        pix_pt1 = ppu_get_patterntable(nes->ppu, 1, nes->pal);
         SDL_UpdateTexture(tex_pt1, NULL, pix_pt1, w_pt * 4);
 
         SDL_UpdateTexture(tex_screen, NULL, nes->pixels, NES_WIDTH * 4);
@@ -304,6 +377,7 @@ nes_window_loop(struct nes *nes)
         SDL_RenderCopy(renderer, tex_pt0, NULL, &nesrect_pt0);
         SDL_RenderCopy(renderer, tex_pt1, NULL, &nesrect_pt1);
         SDL_RenderCopy(renderer, tex_screen, NULL, &nesrect_screen);
+
         SDL_RenderPresent(renderer);
 
         last = now;
@@ -390,7 +464,7 @@ main(int argc, char **argv)
     nes->cartridge.mapper =
       (header_rom.flags7 & 0xF0) | (header_rom.flags6 >> 0x04);
     nes->mirror =
-      (header_rom.flags6 & 0x01) ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
+      (header_rom.flags6 & 0x01) > 0 ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
 
     if (header_rom.flags6 & 0x04)
     {
@@ -408,8 +482,6 @@ main(int argc, char **argv)
 
             int sprg = nes->cartridge.s_prg_rom_16 * 0x4000;
             int schr = nes->cartridge.s_chr_rom_8 * 0x2000;
-
-            printf("PRG SIZE: %04X CHR SIZE: %04X\n", sprg, schr);
 
             nes->cartridge.chr = malloc(schr);
             nes->cartridge.prg = malloc(sprg);

@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['data_63',['data',['../ppu_8h.html#a8068e7422388e80608ad37ac607d109a',1,'ppu']]]
+  ['cartridge_80',['cartridge',['../nes_8h.html#a7efbf1759575fdd6372934728b2bbda0',1,'nes']]],
+  ['cpu_81',['cpu',['../nes_8h.html#a0a83ea6eb5dd95fb9a10747e2a6ba850',1,'nes']]],
+  ['cycle_82',['cycle',['../ppu_8h.html#a7e71107b242c74cea07712b820493892',1,'ppu']]]
 ];
