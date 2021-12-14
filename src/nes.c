@@ -56,7 +56,7 @@
 #define NES_BTN_LF  0x02
 #define NES_BTN_RT  0x01
 
-#define ASPECT   (16 / 15)
+#define ASPECT   (float)(16 / 15)
 #define ALTN(_n) ((_n) = (_n) == 0 ? 1 : 0)
 
 #define ONE_BILLION           1000000000
@@ -208,15 +208,15 @@ nes_window_loop(struct nes *nes)
     const int h_pt    = 128;
     const int ts      = w_pt * h_pt;
 
-    int WINDOW_HEIGHT = 900;
-    float SCALE = WINDOW_HEIGHT / NES_HEIGHT;
-    int NES_OUT_WIDTH = WINDOW_HEIGHT * ASPECT;
-    int WINDOW_WIDTH  = NES_OUT_WIDTH //
-                       + padding      // nesview padding;
-                       + w_pt         // width of pattern table 1
-                       + padding      // padding after pt1
-                       + w_pt         // width of pt2
-                       + padding;     // padding after pt2
+    float SCALE         = 2.9f;
+    float WINDOW_HEIGHT = (float)NES_HEIGHT * SCALE;
+    float NES_OUT_WIDTH = (float)NES_WIDTH * SCALE;
+    int   WINDOW_WIDTH  = NES_OUT_WIDTH //
+                       + padding        // nesview padding;
+                       + w_pt           // width of pattern table 1
+                       + padding        // padding after pt1
+                       + w_pt           // width of pt2
+                       + padding;       // padding after pt2
 
     /*
      *
@@ -322,15 +322,33 @@ nes_window_loop(struct nes *nes)
             if (ev.type == SDL_KEYDOWN)
             {
                 BUTTON_AUTOSET(nes->btns, |);
-                switch (ev.key.keysym.sym)
-                {
-                    case SDLK_f:
-                        break;
-                }
             }
             if (ev.type == SDL_KEYUP)
             {
                 BUTTON_AUTOSET(nes->btns, &~);
+            }
+
+            if (ev.type == SDL_MOUSEBUTTONDOWN)
+            {
+                int mx, my;
+                SDL_PumpEvents();
+                SDL_GetMouseState(&mx, &my);
+
+                u32 rx = (u32)((float)mx / SCALE);
+                u32 ry = (u32)((float)my / SCALE);
+
+                u16 addr_att =
+                  0x23C0 | ((u16)(nes->ppu->registers.ppuctrl << 10) & 0x0C00);
+                addr_att |= ((ry / 32) << 3) & 0x38;
+                addr_att |= (rx / 32) & 0x07;
+
+                u8 bg_at = ppu_read(nes->ppu, addr_att);
+                printf("x: %d, y: %d\n", rx, ry);
+
+                printf("Attr addr: %04X, Attr byte: " BYTE_TO_BINARY_PATTERN
+                       "\n",
+                       addr_att,
+                       BYTE_TO_BINARY(bg_at));
             }
         }
 

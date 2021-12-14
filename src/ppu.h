@@ -154,6 +154,10 @@ struct __attribute__((__packed__)) ppu
 
     u8 inc_sprite0;
     u8 ren_sprite0;
+
+    int pixx;
+    int pixy;
+    u8 printpix;
 };
 
 void

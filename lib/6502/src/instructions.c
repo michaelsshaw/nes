@@ -455,8 +455,15 @@ INS_DECL(plp) //
 
 INS_DECL(rol) //
 {
-    u8  m   = MEM(addr);
-    int neg = NEG8(A);
+    u8 m = MEM(addr);
+    // I'm gonna keep this line commented because this
+    // tiny issue, literally a single letter, caused a very confusing bug where
+    // many tiles in Super Mario Bros would end up green, not their correct
+    // color
+    //
+    // Solution found at: https://forums.nesdev.org/viewtopic.php?p=163890#p163890
+    //    int neg = NEG8(A);
+    int neg = NEG8(m);
 
     m <<= 0x01;
     m |= GETFLAG(CPU, FLAG_C);

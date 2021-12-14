@@ -54,7 +54,7 @@
     }
 
 #define UPDATE_SHIFTERS(_ppu)                                                  \
-    if (_ppu->registers.ppumask & PPUMASK_b)                                   \
+    if (PPUFLAG(_ppu, ppumask, PPUMASK_b))                                     \
     {                                                                          \
         _ppu->bg_shift_plo <<= 1;                                              \
         _ppu->bg_shift_phi <<= 1;                                              \
@@ -249,7 +249,7 @@ ppu_read(struct ppu *ppu, u16 addr)
     return r;
 }
 
-inline void
+void
 ppu_write(struct ppu *ppu, u16 addr, u8 val)
 {
     *ppu_get_mempointer(ppu, addr) = val;
@@ -603,6 +603,7 @@ ppu_clock(struct ppu *ppu)
                         }
 
                         out = ppu_read(ppu, addr);
+                        // horizontal sprite mirroring
                         if (attr & 0x40)
                         {
                             BYTE_FLIP(out);
