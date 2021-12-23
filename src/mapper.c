@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "util.h"
 #include "mapper.h"
 
@@ -7,6 +9,16 @@ void
 mappers_init()
 {
     MAP_DECL(00);
+}
+
+void
+mapper_init(struct nes *nes)
+{
+    switch (nes->cartridge.mapper)
+    {
+        case 1:
+            break;
+    }
 }
 
 MAP_FUNC(00)
@@ -41,15 +53,11 @@ MAP_FUNC(01)
             return nes->cartridge.prg_ram + (addr - 0x6000);
         }
 
-        IFINRANGE(addr, 0x8000, 0xBFFF)
-        {
-        }
+        IFINRANGE(addr, 0x8000, 0xBFFF) {}
     }
 
-    MODE(MAP_MODE_PPU)
-    {
-
-    }
+    MODE(MAP_MODE_PPU) {}
 
     return (mem + addr);
 }
+

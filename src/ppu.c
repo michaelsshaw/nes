@@ -349,6 +349,8 @@ ppu_scroll_inc_y(struct ppu *ppu)
 void
 ppu_clock(struct ppu *ppu)
 {
+    struct nes *nes = ppu->fw;
+
     IFINRANGE(ppu->scanline, -1, 239)
     {
         /*
@@ -359,6 +361,8 @@ ppu_clock(struct ppu *ppu)
             CLPPUFLAG(ppu, ppustatus, PPUSTATUS_V);
             CLPPUFLAG(ppu, ppustatus, PPUSTATUS_S);
             CLPPUFLAG(ppu, ppustatus, PPUSTATUS_O);
+
+            nes->frame_complete = 0;
 
             memset(ppu->sp_shift_lo, 0, 16);
         }
@@ -576,7 +580,13 @@ ppu_clock(struct ppu *ppu)
                     case 3:
                         u16 addr;
                         u8  attr = (ppu->soam[sindex * 4 + 2]);
-                        u8  h    = PPUFLAG(ppu, ppuctrl, PPUCTRL_H);
+                        u16 ypos =
+                          0x0000 | (ppu->scanline - ppu->soam[sindex * 4]);
+
+                        // vertical sprite mirroring
+                        u8 h = PPUFLAG(ppu, ppuctrl, PPUCTRL_H);
+
+                        if (attr & 0x80) ypos = 7 - ypos;
                         if (h)
                         {
                             addr     = ppu->soam[sindex * 4 + 1];
@@ -584,10 +594,6 @@ ppu_clock(struct ppu *ppu)
                             addr &= 0xFE;
                             addr += (rm - 1);
                             addr <<= 4;
-                            u16 ypos =
-                              0x0000 | (ppu->scanline - ppu->soam[sindex * 4]);
-
-                            if (attr & 0x80) ypos = 7 - ypos;
                             addr |= ypos;
                             addr |= bank;
                         }
@@ -596,10 +602,10 @@ ppu_clock(struct ppu *ppu)
                             addr = //
                               ((ppu->soam[sindex * 4 + 1]
                                 << 4) // which sprite in the table
-                               | (ppu->scanline -
-                                  ppu->soam[sindex * 4]) // offset by y
                                | (PPUFLAG(ppu, ppuctrl, PPUCTRL_S) << 12)) +
                               (rm - 2) * 8;
+
+                            addr |= ypos;
                         }
 
                         out = ppu_read(ppu, addr);
@@ -713,12 +719,16 @@ ppu_clock(struct ppu *ppu)
         }
     }
 
-    struct nes *nes = ppu->fw;
     if (INRANGE((ppu->cycle - 1), 0, NES_WIDTH - 1) &&
-        INRANGE(ppu->scanline, 0, NES_HEIGHT - 1) && 1)
+        INRANGE(ppu->scanline, 0, NES_HEIGHT - 1))
     {
         u32 pix = PCOLREAD(bgpal, bgpix);
         nes->pixels[(ppu->cycle - 1) + ppu->scanline * NES_WIDTH] = pix;
+    }
+
+    if (ppu->cycle == NES_WIDTH - 1 && ppu->scanline == NES_HEIGHT - 1)
+    {
+        nes->frame_complete = 1;
     }
 
     IFINRANGE(ppu->cycle, 1, 256)

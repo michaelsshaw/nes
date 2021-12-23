@@ -106,6 +106,10 @@ struct nes
     u8 pal;
     u8 btns;
     u8 btn_latch;
+
+    u8 btn_speed;
+
+    u8 frame_complete;
 };
 
 void

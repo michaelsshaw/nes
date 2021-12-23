@@ -23,6 +23,8 @@ file(GLOB_RECURSE SRCS src/*.c)
 
 add_executable(NES ${SRCS})
 
+find_package(wxWidgets COMPONENTS gl core base)
+
 target_link_libraries(NES m)
 if(NOT WIN32 AND NOT APPLE)
     target_link_libraries(NES dl)

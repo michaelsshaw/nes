@@ -43,5 +43,6 @@
 typedef u8 *(*mapcall)(MAP_FUNC_HEADER);
 
 MAP_FUNC(00);
+MAP_FUNC(01);
 
 #endif // NES_MAPPER_H_

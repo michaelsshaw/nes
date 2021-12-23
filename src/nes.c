@@ -102,6 +102,8 @@
         case SDLK_x:                                                           \
             BUTTON_SET((_reg), NES_BTN_B, _op);                                \
             break;                                                             \
+        case SDLK_SPACE:                                                       \
+            BUTTON_SET(nes->btn_speed, 0x01, _op);                             \
     }
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
@@ -161,7 +163,7 @@ nes_game_loop(void *in)
     {
         now = nes_time_get();
 
-        if (now - last < NS_CLOCK) continue;
+        if (now - last < NS_CLOCK && !nes->btn_speed) continue;
 
         ppu_clock(nes->ppu);
 
@@ -203,21 +205,10 @@ nes_game_loop(void *in)
 void
 nes_window_loop(struct nes *nes)
 {
-    int       padding = 20;
-    const int w_pt    = 128;
-    const int h_pt    = 128;
-    const int ts      = w_pt * h_pt;
-
     float SCALE         = 2.9f;
     float WINDOW_HEIGHT = (float)NES_HEIGHT * SCALE;
     float NES_OUT_WIDTH = (float)NES_WIDTH * SCALE;
-    int   WINDOW_WIDTH  = NES_OUT_WIDTH //
-                       + padding        // nesview padding;
-                       + w_pt           // width of pattern table 1
-                       + padding        // padding after pt1
-                       + w_pt           // width of pt2
-                       + padding;       // padding after pt2
-
+    int   WINDOW_WIDTH  = NES_OUT_WIDTH;
     /*
      *
      * Initialize the SDL window
@@ -246,37 +237,6 @@ nes_window_loop(struct nes *nes)
      * IMPORTANT
      *
      */
-    u32 *pixels = malloc(ts * 4);
-    memset(pixels, 0x00, ts * 4);
-
-    //
-    // First Pattern Table
-    //
-    SDL_Texture *tex_pt0 = SDL_CreateTexture(renderer,
-                                             SDL_PIXELFORMAT_ARGB8888,
-                                             SDL_TEXTUREACCESS_STREAMING,
-                                             w_pt,
-                                             h_pt);
-
-    u32 *pix_pt0;
-    RECT_DECL(pt0,
-              NES_OUT_WIDTH + padding,        //
-              WINDOW_HEIGHT - h_pt - padding, //
-              w_pt,                           //
-              h_pt);                          //
-
-    SDL_Texture *tex_pt1 = SDL_CreateTexture(renderer,
-                                             SDL_PIXELFORMAT_ARGB8888,
-                                             SDL_TEXTUREACCESS_STREAMING,
-                                             w_pt,
-                                             h_pt);
-
-    u32 *pix_pt1;
-    RECT_DECL(pt1,
-              WINDOW_WIDTH - w_pt - padding,  //
-              WINDOW_HEIGHT - h_pt - padding, //
-              w_pt,                           //
-              h_pt);                          //
 
     SDL_Texture *tex_screen = SDL_CreateTexture(renderer,
                                                 SDL_PIXELFORMAT_ARGB8888,
@@ -307,8 +267,6 @@ nes_window_loop(struct nes *nes)
     {
         now = nes_time_get();
 
-        if (now - last < NS_CLOCK) continue;
-
         SDL_SetRenderDrawColor(renderer, 80, 190, 190, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
 
@@ -326,29 +284,6 @@ nes_window_loop(struct nes *nes)
             if (ev.type == SDL_KEYUP)
             {
                 BUTTON_AUTOSET(nes->btns, &~);
-            }
-
-            if (ev.type == SDL_MOUSEBUTTONDOWN)
-            {
-                int mx, my;
-                SDL_PumpEvents();
-                SDL_GetMouseState(&mx, &my);
-
-                u32 rx = (u32)((float)mx / SCALE);
-                u32 ry = (u32)((float)my / SCALE);
-
-                u16 addr_att =
-                  0x23C0 | ((u16)(nes->ppu->registers.ppuctrl << 10) & 0x0C00);
-                addr_att |= ((ry / 32) << 3) & 0x38;
-                addr_att |= (rx / 32) & 0x07;
-
-                u8 bg_at = ppu_read(nes->ppu, addr_att);
-                printf("x: %d, y: %d\n", rx, ry);
-
-                printf("Attr addr: %04X, Attr byte: " BYTE_TO_BINARY_PATTERN
-                       "\n",
-                       addr_att,
-                       BYTE_TO_BINARY(bg_at));
             }
         }
 
@@ -380,20 +315,13 @@ nes_window_loop(struct nes *nes)
         // Update the PT pixels and textures
         //
 
-        pix_pt0 = ppu_get_patterntable(nes->ppu, 0, nes->pal);
-        SDL_UpdateTexture(tex_pt0, NULL, pix_pt0, w_pt * 4);
-
-        pix_pt1 = ppu_get_patterntable(nes->ppu, 1, nes->pal);
-        SDL_UpdateTexture(tex_pt1, NULL, pix_pt1, w_pt * 4);
-
-        SDL_UpdateTexture(tex_screen, NULL, nes->pixels, NES_WIDTH * 4);
+        if (nes->frame_complete)
+            SDL_UpdateTexture(tex_screen, NULL, nes->pixels, NES_WIDTH * 4);
 
         //
         // Copy the textures to the renderer
         //
 
-        SDL_RenderCopy(renderer, tex_pt0, NULL, &nesrect_pt0);
-        SDL_RenderCopy(renderer, tex_pt1, NULL, &nesrect_pt1);
         SDL_RenderCopy(renderer, tex_screen, NULL, &nesrect_screen);
 
         SDL_RenderPresent(renderer);
@@ -483,6 +411,7 @@ main(int argc, char **argv)
       (header_rom.flags7 & 0xF0) | (header_rom.flags6 >> 0x04);
     nes->mirror =
       (header_rom.flags6 & 0x01) > 0 ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
+    printf("%d\n", nes->cartridge.mapper);
 
     if (header_rom.flags6 & 0x04)
     {
@@ -512,7 +441,7 @@ main(int argc, char **argv)
             break;
 
         default:
-            break;
+            break; 
     }
 
     fclose(file);
