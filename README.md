@@ -7,10 +7,3 @@ This repository could use some clean up and refactoring. SDL2 does not need to b
 # TODO
 Sound
 
-=======
-# Non-comprehensive list of known bugs
-
-The top left attribute of many tiles is wrong. Don't know why.
-
-# TODO
-Sound
