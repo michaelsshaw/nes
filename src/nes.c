@@ -104,6 +104,8 @@
             break;                                                             \
         case SDLK_SPACE:                                                       \
             BUTTON_SET(nes->btn_speed, 0x01, _op);                             \
+        case SDLK_i:                                                           \
+            cpu_echooff = cpu_echooff == 0 ? 1 : 0;                            \
     }
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
@@ -441,7 +443,7 @@ main(int argc, char **argv)
             break;
 
         default:
-            break; 
+            break;
     }
 
     fclose(file);

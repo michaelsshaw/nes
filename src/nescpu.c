@@ -115,9 +115,6 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
     }
     else if (addr == 0x4014) // OAM DMA
     {
-        // Takes a few cycles to do this, so just delay things
-        cpu->cycles += 513 + ((em->cycle & 1) == 1 ? 1 : 0);
-
         // Example:
         // lda $XX
         // sta $4014
@@ -132,8 +129,11 @@ nes_cpu_write(struct cpu *cpu, u16 addr, u8 val)
         u16 i;
         for (i = 0; i <= 0xFF; i++)
         {
-            ppu->oam[(i + ppu->registers.oamaddr)] = nes_cpu_read(CPU, hi | i);
+            ppu->oam[(i + ppu->registers.oamaddr) & 0xFF] = nes_cpu_read(CPU, hi | i);
         }
+        
+        // Takes a few cycles to do this, so just delay things
+        cpu->cycles += 513 + ((em->cycle & 1) == 1 ? 1 : 0);
         return;
     }
     else if (addr == 0x4016 && (val & 0x01) == 0x00)

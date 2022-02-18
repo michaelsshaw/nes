@@ -137,7 +137,7 @@ struct __attribute__((__packed__)) ppu
      */
 
     u8 oam[256]; //!< Object attribute memory
-    u8 soam[32]; //!< Secondary OAM
+    u8 soam[64]; //!< Secondary OAM
     u8 n_oam;    // 0-63
     u8 m_oam;    // 0-3
     u8 i_soam;   // 0-7

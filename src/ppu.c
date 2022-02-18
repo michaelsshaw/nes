@@ -526,6 +526,10 @@ ppu_clock(struct ppu *ppu)
                             ppu->soam_true = 0;
                         }
                     }
+                    else
+                    {
+                        PPUSETFLAG(ppu, ppustatus, PPUSTATUS_O);
+                    }
                 }
                 else
                 {
@@ -706,7 +710,10 @@ ppu_clock(struct ppu *ppu)
                          !(ppu->registers.ppumask & 0x06)) || //
                         (INRANGE(ppu->cycle, 1, 258) &&
                          (ppu->registers.ppumask & 0x06)))
+                    {
                         PPUSETFLAG(ppu, ppustatus, PPUSTATUS_S); // set sprite 0
+                                                                 //
+                    }
                 }
                 if (pix > 0 &&
                     (bgpix == 0 || ((ppu->sp_latch[i] & 0x20) == 0)) &&

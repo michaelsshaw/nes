@@ -9,6 +9,7 @@ void
 mappers_init()
 {
     MAP_DECL(00);
+    MAP_DECL(01);
 }
 
 void
