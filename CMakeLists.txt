@@ -10,28 +10,27 @@ file(GLOB_RECURSE ROMS tests/*.nes)
 file(COPY ${RESS} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 file(COPY ${ROMS} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
-set(CMAKE_C_FLAGS "-O3 -Wall -std=gnu11 -g")
+set(CMAKE_C_FLAGS "-O3 -Wall")
 
 include_directories(include)
 include_directories(lib/SDL2/include)
 include_directories(lib/6502/include)
 
-project(project_nes)
+project(project_NES)
 
 
 file(GLOB_RECURSE SRCS src/*.c)
 
-add_executable(nes ${SRCS})
+add_executable(NES ${SRCS})
 
-find_package(wxWidgets COMPONENTS gl core base)
 
-target_link_libraries(nes m)
-if(NOT WIN32 AND NOT APPLE)
-    target_link_libraries(nes dl)
+target_link_libraries(NES m)
+if(NOT WIN32)
+    target_link_libraries(NES dl)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
     
     find_package(SDL2 REQUIRED)
-endif(NOT WIN32 AND NOT APPLE)
+endif(NOT WIN32)
 
 if(WIN32)
     add_subdirectory(lib/SDL2)
@@ -39,10 +38,5 @@ if(WIN32)
 endif(WIN32)
 
 add_subdirectory(lib/6502)
-target_link_libraries(nes SDL2 ${SDL2_LIBRARIES})
-target_link_libraries(nes 6502 ${6502_LIBRARIES})
-
-find_package(Curses REQUIRED)
-include_directories(${CURSES_INCLUDE_DIR})
-
-target_link_libraries(nes ${CURSES_LIBRARIES})
+target_link_libraries(NES ${SDL2_LIBRARY})
+target_link_libraries(NES 6502 ${6502_LIBRARIES})
