@@ -38,11 +38,9 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef __MACH__
-#include <sys/time.h>
-#else
+#include <unistd.h>
 #include <time.h>
-#endif
+#include <sys/time.h>
 
 #include <pthread.h>
 
@@ -158,11 +156,8 @@ nes_time_get()
  * @param in Void pointer to a struct nes
  */
 
-#pragma GCC push_options
-#pragma GCC optimize ("-O0")
-#pragma clang optimize off
-
-int __attribute__((optimize("O0"))) nes_game_loop(void *in)
+int
+nes_game_loop(void *in)
 {
     struct nes *nes = (struct nes *)in;
 
@@ -187,17 +182,15 @@ int __attribute__((optimize("O0"))) nes_game_loop(void *in)
             }
         }
         uint64_t sleept = NS_CLOCK - (nes_time_get() - last);
-        sleept = MIN(sleept, NS_CLOCK);
+        sleept          = MIN(sleept, NS_CLOCK);
         if (usleep(sleept) != 0)
         {
-            printf("USLEEP FAILED %d\n", errno);
+            printf("usleep error: %d // %s\n", errno, strerror(errno));
         }
     }
 
     return 0;
 }
-#pragma clang optimize on
-#pragma GCC pop_options
 
 /*!
  * Main window loop for the entire NES program.
