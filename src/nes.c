@@ -36,7 +36,14 @@
 #include <em6502.h>
 #include <cpu.h>
 #include <string.h>
+#include <errno.h>
+
+#ifdef __MACH__
+#include <sys/time.h>
+#else
 #include <time.h>
+#endif
+
 #include <pthread.h>
 
 #include <nes.h>
@@ -132,7 +139,7 @@ nes_time_get()
 
     if (gettimeofday(&tv, NULL))
     {
-        fputs("nes_time_get failed!", stderr);
+        fputs("nes_time_get failed!\n", stderr);
         return 0;
     }
     return 1000000 * tv.tv_sec + tv.tv_usec;
@@ -150,18 +157,16 @@ nes_time_get()
  *
  * @param in Void pointer to a struct nes
  */
-int
-nes_game_loop(void *in)
+
+#pragma GCC push_options
+#pragma GCC optimize ("-O0")
+#pragma clang optimize off
+
+int __attribute__((optimize("O0"))) nes_game_loop(void *in)
 {
     struct nes *nes = (struct nes *)in;
 
     uint64_t last = 0;
-    uint64_t now  = 0;
-
-    u8  enable = 0;
-    u32 count  = 0;
-
-    struct timespec wait = { .tv_sec = 0, .tv_nsec = 5 };
 
     while (nes->enable)
     {
@@ -181,12 +186,18 @@ nes_game_loop(void *in)
                 cpu_nmi(nes->cpu);
             }
         }
-        now = nes_time_get();
-        usleep(NS_CLOCK - (now - last));
+        uint64_t sleept = NS_CLOCK - (nes_time_get() - last);
+        sleept = MIN(sleept, NS_CLOCK);
+        if (usleep(sleept) != 0)
+        {
+            printf("USLEEP FAILED %d\n", errno);
+        }
     }
 
     return 0;
 }
+#pragma clang optimize on
+#pragma GCC pop_options
 
 /*!
  * Main window loop for the entire NES program.
@@ -314,8 +325,7 @@ nes_window_loop(struct nes *nes)
         // Update the PT pixels and textures
         //
 
-        if (nes->frame_complete)
-            SDL_UpdateTexture(tex_screen, NULL, nes->pixels, NES_WIDTH * 4);
+        SDL_UpdateTexture(tex_screen, NULL, nes->pixels, NES_WIDTH * 4);
 
         //
         // Copy the textures to the renderer

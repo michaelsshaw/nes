@@ -31,5 +31,6 @@
 
 #define INRANGE(_num, _x, _y)        ((_num) >= (_x) && (_num) <= (_y))
 #define IFINRANGE(__num, __xx, __yy) if (INRANGE((__num), (__xx), (__yy)))
+#define MIN(_a, _b) ((_a) < (_b) ? (_a) : (_b))
 
 #endif // NES_UTIL_H_
