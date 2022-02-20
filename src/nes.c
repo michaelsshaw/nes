@@ -44,6 +44,7 @@
 #include "util.h"
 #include "nescpu.h"
 #include "mapper.h"
+#include "debug.h"
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -61,9 +62,10 @@
 #define ALTN(_n) ((_n) = (_n) == 0 ? 1 : 0)
 
 #define ONE_BILLION           1000000000
-#define NES_CPU_CLOCKS_SECOND (1790000 * 3)
-#define NS_CLOCK              ONE_BILLION / NES_CPU_CLOCKS_SECOND
-#define NS_FRAME              ONE_BILLION / 60
+#define ONE_MILLION           1000000
+#define NES_CPU_CLOCKS_SECOND (1790000)
+#define NS_CLOCK              (ONE_BILLION / NES_CPU_CLOCKS_SECOND)
+#define NS_FRAME              (ONE_BILLION / 60)
 
 #define RECT_DECL(_name, _x, _y, _w, _h)                                       \
     struct SDL_Rect nesrect_##_name = {                                        \
@@ -119,21 +121,21 @@
 extern struct nes *NES;
 
 /*!
- * Returns the current monotonic time in nanoseconds
+ * Returns the current monotonic time in microseconds
  *
  * @see nes_window_loop
  */
 uint64_t
 nes_time_get()
 {
-    struct timespec ts;
+    struct timeval tv;
 
-    if (clock_gettime(CLOCK_MONOTONIC, &ts))
+    if (gettimeofday(&tv, NULL))
     {
         fputs("nes_time_get failed!", stderr);
         return 0;
     }
-    return 1000000000 * ts.tv_sec + ts.tv_nsec;
+    return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
 /*!
@@ -159,36 +161,28 @@ nes_game_loop(void *in)
     u8  enable = 0;
     u32 count  = 0;
 
+    struct timespec wait = { .tv_sec = 0, .tv_nsec = 5 };
+
     while (nes->enable)
     {
-        now = nes_time_get();
-
-        if (now - last < NS_CLOCK && !nes->btn_speed) continue;
-
-        ppu_clock(nes->ppu);
-
-        if (nes->ppu->nmi)
+        last = nes_time_get();
+        // time 1000 cpu clocks
+        for (int i = 0; i < 1000; i++)
         {
-            nes->ppu->nmi = 0;
-            cpu_nmi(nes->cpu);
-            enable = 1;
+            ppu_clock(nes->ppu);
+            ppu_clock(nes->ppu);
+            ppu_clock(nes->ppu);
 
-            count = 0;
-        }
-        if (nes->cycle % 3 == 0)
-        {
-            count += 1;
             cpu_clock(nes->cpu);
-        }
 
-        if (enable && (nes->ppu->registers.ppustatus & 0x80) == 0)
-        {
-            enable = 0;
-            // printf("%d\n", count);
+            if (nes->ppu->nmi)
+            {
+                nes->ppu->nmi = 0;
+                cpu_nmi(nes->cpu);
+            }
         }
-
-        nes->cycle += 1;
-        last = now;
+        now = nes_time_get();
+        usleep(NS_CLOCK - (now - last));
     }
 
     return 0;
@@ -262,6 +256,11 @@ nes_window_loop(struct nes *nes)
     // init the buttons
     nes->btns      = 0x00;
     nes->btn_latch = 0x00;
+
+    if (nes->mode_debug)
+    {
+        SDL_CreateThread(nes_debug_loop, "NES_DEBUG_LOOP", (void *)nes);
+    }
 
     for (;;)
     {
