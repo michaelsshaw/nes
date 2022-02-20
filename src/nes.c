@@ -428,7 +428,6 @@ main(int argc, char **argv)
       (header_rom.flags7 & 0xF0) | (header_rom.flags6 >> 0x04);
     nes->mirror =
       (header_rom.flags6 & 0x01) > 0 ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
-    printf("%d\n", nes->cartridge.mapper);
 
     if (header_rom.flags6 & 0x04)
     {
