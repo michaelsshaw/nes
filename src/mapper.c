@@ -6,7 +6,7 @@
 #define MODE(_a) if (mode == _a)
 
 void
-mappers_init()
+mappers_init(struct nes *nes)
 {
     MAP_DECL(00);
     MAP_DECL(01);

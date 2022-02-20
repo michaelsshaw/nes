@@ -10,7 +10,7 @@ file(GLOB_RECURSE ROMS tests/*.nes)
 file(COPY ${RESS} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 file(COPY ${ROMS} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
-set(CMAKE_C_FLAGS "-O3 -Wall -std=gnu11 -pg -no-pie -fno-builtin")
+set(CMAKE_C_FLAGS "-O3 -Wall -std=gnu11 -g")
 
 include_directories(include)
 include_directories(lib/SDL2/include)

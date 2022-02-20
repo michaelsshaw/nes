@@ -28,6 +28,7 @@
  *
  */
 
+#include <getopt.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -115,10 +116,7 @@
       (byte & 0x08 ? '1' : '0'), (byte & 0x04 ? '1' : '0'),                    \
       (byte & 0x02 ? '1' : '0'), (byte & 0x01 ? '1' : '0')
 
-struct nes *NES;
-
-void
-mappers_init();
+extern struct nes *NES;
 
 /*!
  * Returns the current monotonic time in nanoseconds
@@ -351,26 +349,20 @@ out:
 int
 main(int argc, char **argv)
 {
-    if (argc != 2)
-    {
-        printf("Usage: %s <filename>\n", argv[0]);
-        return 1;
-    }
-
     // *******************
     // EMULATOR & CPU INIT
     // *******************
-    NES               = malloc(sizeof(struct nes));
-    NES->cpu          = malloc(sizeof(struct cpu));
-    NES->ppu          = malloc(sizeof(struct ppu));
-    NES->cpu->mem     = malloc(MEM_SIZE);
-    NES->mappers      = malloc(0xFF * sizeof(void *));
-    NES->offs         = 0;
-    NES->cpu->echooff = 0;
-    NES->enable       = 1;
-    NES->cycle        = 0;
-
     struct nes *nes = NES;
+
+    nes               = malloc(sizeof(struct nes));
+    nes->cpu          = malloc(sizeof(struct cpu));
+    nes->ppu          = malloc(sizeof(struct ppu));
+    nes->cpu->mem     = malloc(MEM_SIZE);
+    nes->mappers      = malloc(0xFF * sizeof(void *));
+    nes->offs         = 0;
+    nes->cpu->echooff = 0;
+    nes->enable       = 1;
+    nes->cycle        = 0;
 
     nes->cpu->cpu_read  = nes_cpu_read;
     nes->cpu->cpu_write = nes_cpu_write;
@@ -380,12 +372,33 @@ main(int argc, char **argv)
 
     memset(nes->cpu->mem, 0, MEM_SIZE);
 
-    mappers_init();
+    mappers_init(nes);
     ppu_init(nes->ppu);
 
     // ********
     // LOAD ROM
     // ********
+
+    int opt;
+
+    while ((opt = getopt(argc, argv, "d")) != -1)
+    {
+        switch (opt)
+        {
+            case 'd':
+                nes->mode_debug = 1;
+                break;
+            default: /* '?' */
+                fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n", argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    if (optind >= argc)
+    {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
 
     struct
     {

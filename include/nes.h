@@ -110,6 +110,8 @@ struct nes
     u8 btn_speed;
 
     u8 frame_complete;
+
+    u8 mode_debug;
 };
 
 void
