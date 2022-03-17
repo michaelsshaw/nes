@@ -48,30 +48,6 @@
     _i = (_i & 0xCC) >> 2 | (_i & 0x33) << 2;                                  \
     _i = (_i & 0xAA) >> 1 | (_i & 0x55) << 1;
 
-void
-ppu_debug_print_oam(struct ppu *ppu)
-{
-    for (int i = 0; i < 64; i++)
-    {
-        printf("OAM %02X ||| ", i << 2);
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%02X ", ppu->oam[i * 4 + j]);
-        }
-        printf("\n");
-    }
-    printf("------------------------------\n");
-    for (int i = 0; i < 8; i++)
-    {
-        printf("SOAM %02X ||| ", i << 2);
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%02X ", ppu->soam[i * 4 + j]);
-        }
-        printf("\n");
-    }
-}
-
 u8
 ppu_cpu_read(struct ppu *ppu, u16 addr)
 {
@@ -263,7 +239,7 @@ ppu_get_patterntable(struct ppu *ppu, u8 i, u8 pal)
 }
 
 static inline void
-RESET_SHIFTERS(struct ppu *ppu)
+ppu_reset_shifters(struct ppu *ppu)
 {
     {
         ppu->bg_shift_plo = (ppu->bg_shift_plo & 0xFF00) | (ppu->bg_lsb);
@@ -276,7 +252,7 @@ RESET_SHIFTERS(struct ppu *ppu)
 }
 
 static inline void
-UPDATE_SHIFTERS(struct ppu *ppu)
+ppu_update_shifters(struct ppu *ppu)
 {
     if (PPUFLAG(ppu, ppumask, PPUMASK_b))
     {
@@ -366,12 +342,6 @@ ppu_clock_background(struct ppu *ppu)
      * Background rendering ONLY
      */
 
-    /* https://www.nesdev.org/wiki/PPU_frame_timing */
-    if (ppu->scanline == -1 && ppu->cycle == 0 && ppu->odd_frame)
-    {
-        ppu->cycle += 1;
-    }
-
     if (ppu->scanline == -1 && ppu->cycle == 1)
     {
         CLPPUFLAG(ppu, ppustatus, PPUSTATUS_V);
@@ -386,11 +356,11 @@ ppu_clock_background(struct ppu *ppu)
     {
         u16 vaddr = ppu->vaddr & 0x7FFF;
         u16 tmp;
-        UPDATE_SHIFTERS(ppu);
+        ppu_update_shifters(ppu);
         switch ((ppu->cycle - 1) & 0x7)
         {
             case 0:
-                RESET_SHIFTERS(ppu);
+                ppu_reset_shifters(ppu);
                 ppu->bg_id = ppu_read(ppu, 0x2000 | (vaddr & 0x0FFF));
                 break;
             case 2:
@@ -442,7 +412,7 @@ ppu_clock_background(struct ppu *ppu)
 
     if (ppu->cycle == 257)
     {
-        RESET_SHIFTERS(ppu);
+        ppu_reset_shifters(ppu);
         transfer_address_x(ppu);
     }
 
@@ -646,28 +616,22 @@ ppu_clock(struct ppu *ppu)
 {
     struct nes *nes = ppu->fw;
 
+    /* https://www.nesdev.org/wiki/PPU_frame_timing */
+    if (ppu->scanline == -1 && ppu->cycle == 0 && ppu->odd_frame)
+    {
+        ppu->cycle += 1;
+    }
+
     IFINRANGE(ppu->scanline, -1, 239)
     {
         ppu_clock_background(ppu);
     }
+
     IFINRANGE(ppu->scanline, 0, 239)
     {
         ppu_clock_foreground(ppu);
     }
 
-    /*    if (ppu->scanline == 26 && ppu->cycle == 320)
-        {
-            ppu_debug_print_oam(ppu);
-            for (int i = 0; i < 8; i++)
-            {
-                printf("SCANLINE 24 DATA ||| ");
-                for (int j = 0; j < 4; j++)
-                {
-                    printf("%02X ", *((&ppu->sp_shift_lo[0]) + i + j * 8));
-                }
-                printf("\n");
-            }
-        }*/
     /*
      * Cause a CPU NMI if NMI enable flag is 1
      */
