@@ -66,11 +66,7 @@
 #define ASPECT   (float)(16 / 15)
 #define ALTN(_n) ((_n) = (_n) == 0 ? 1 : 0)
 
-#define ONE_BILLION           1000000000
-#define ONE_MILLION           1000000
-#define NES_CPU_CLOCKS_SECOND (1790000)
-#define NS_CLOCK              (ONE_BILLION / NES_CPU_CLOCKS_SECOND)
-#define NS_FRAME              (ONE_BILLION / 60)
+#define NS_CLOCK 558
 
 #define RECT_DECL(_name, _x, _y, _w, _h)                                       \
     struct SDL_Rect nesrect_##_name = {                                        \
@@ -81,6 +77,8 @@
 // or  BUTTON_SET(btnreg, NES_BTN_A, & ~); to clear
 #define BUTTON_SET(_reg, _btn, _op) ((_reg) = ((_reg)_op(_btn)))
 
+void
+debug_print_oam(struct nes *nes);
 // i don't wanna type this twice(once for keyup, once for keydown
 #define BUTTON_AUTOSET(_reg, _op)                                              \
     switch (ev.key.keysym.sym)                                                 \
@@ -112,8 +110,13 @@
             break;                                                             \
         case SDLK_SPACE:                                                       \
             BUTTON_SET(nes->btn_speed, 0x01, _op);                             \
+            break;                                                             \
         case SDLK_i:                                                           \
             cpu_echooff = cpu_echooff == 0 ? 1 : 0;                            \
+            break;                                                             \
+        case SDLK_f:                                                           \
+            debug_print_oam(nes);                                              \
+            break;                                                             \
     }
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"

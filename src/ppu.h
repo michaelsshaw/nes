@@ -83,6 +83,8 @@ struct __attribute__((__packed__)) ppu
     u32 *(pattern_tables_pix[2]); //!< 2 debug pixel arrays for displaying
                                   //!< pattern tables
 
+    u8 odd_frame;
+
     struct
     {
         u8 ppuctrl;   //!< CPU address $2000
@@ -157,7 +159,7 @@ struct __attribute__((__packed__)) ppu
 
     int pixx;
     int pixy;
-    u8 printpix;
+    u8  printpix;
 };
 
 void
