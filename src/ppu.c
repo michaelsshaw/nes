@@ -48,30 +48,6 @@
     _i = (_i & 0xCC) >> 2 | (_i & 0x33) << 2;                                  \
     _i = (_i & 0xAA) >> 1 | (_i & 0x55) << 1;
 
-void
-ppu_debug_print_oam(struct ppu *ppu)
-{
-    for (int i = 0; i < 64; i++)
-    {
-        printf("OAM %02X ||| ", i << 2);
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%02X ", ppu->oam[i * 4 + j]);
-        }
-        printf("\n");
-    }
-    printf("------------------------------\n");
-    for (int i = 0; i < 8; i++)
-    {
-        printf("SOAM %02X ||| ", i << 2);
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%02X ", ppu->soam[i * 4 + j]);
-        }
-        printf("\n");
-    }
-}
-
 u8
 ppu_cpu_read(struct ppu *ppu, u16 addr)
 {
@@ -650,24 +626,12 @@ ppu_clock(struct ppu *ppu)
     {
         ppu_clock_background(ppu);
     }
+
     IFINRANGE(ppu->scanline, 0, 239)
     {
         ppu_clock_foreground(ppu);
     }
 
-    /*    if (ppu->scanline == 26 && ppu->cycle == 320)
-        {
-            ppu_debug_print_oam(ppu);
-            for (int i = 0; i < 8; i++)
-            {
-                printf("SCANLINE 24 DATA ||| ");
-                for (int j = 0; j < 4; j++)
-                {
-                    printf("%02X ", *((&ppu->sp_shift_lo[0]) + i + j * 8));
-                }
-                printf("\n");
-            }
-        }*/
     /*
      * Cause a CPU NMI if NMI enable flag is 1
      */
