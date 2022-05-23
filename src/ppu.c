@@ -540,8 +540,10 @@ ppu_clock_foreground(struct ppu *ppu)
         // since the temp variables aren't used anymore (i_soam, n_oam,
         // m_oam) we are safe to use them here
 
-        u8 index  = ((u8)(tcycle / 2)); // which part of soam mem(0-31)
-        u8 sindex = ((u8)(tcycle / 8)); // which sprite we're on(0-7)
+        u8  index  = ((u8)(tcycle / 2)); // which part of soam mem(0-31)
+        u8  sindex = ((u8)(tcycle / 8)); // which sprite we're on(0-7)
+        u16 addr;
+        u8  attr;
 
         u8 rm = index % 4;
         if ((tcycle & 0x01) == 0) // read on even, write on odd, yes it's
@@ -560,8 +562,7 @@ ppu_clock_foreground(struct ppu *ppu)
                     break;
                 case 2:
                 case 3:
-                    u16 addr;
-                    u8  attr = (ppu->soam[sindex * 4 + 2]);
+                    attr = (ppu->soam[sindex * 4 + 2]);
                     u16 ypos = 0x0000 | (ppu->scanline - ppu->soam[sindex * 4]);
 
                     // vertical sprite mirroring
@@ -622,15 +623,9 @@ ppu_clock(struct ppu *ppu)
         ppu->cycle += 1;
     }
 
-    IFINRANGE(ppu->scanline, -1, 239)
-    {
-        ppu_clock_background(ppu);
-    }
+    IFINRANGE(ppu->scanline, -1, 239) { ppu_clock_background(ppu); }
 
-    IFINRANGE(ppu->scanline, 0, 239)
-    {
-        ppu_clock_foreground(ppu);
-    }
+    IFINRANGE(ppu->scanline, 0, 239) { ppu_clock_foreground(ppu); }
 
     /*
      * Cause a CPU NMI if NMI enable flag is 1
