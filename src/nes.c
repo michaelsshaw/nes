@@ -452,8 +452,6 @@ main(int argc, char **argv)
 
     cpu_reset(nes->cpu);
 
-    break;
-
     fclose(file);
 
     // ************
