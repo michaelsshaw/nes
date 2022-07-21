@@ -437,31 +437,22 @@ main(int argc, char **argv)
         fseek(file, 512, SEEK_CUR); // skip trainer
     }
 
-    int filetype = 1;
 
-    switch (filetype)
-    {
-        case 1:
+    nes->cartridge.s_prg_rom_16 = header_rom.s_prg_rom_16;
+    nes->cartridge.s_chr_rom_8  = header_rom.s_chr_rom_8;
 
-            nes->cartridge.s_prg_rom_16 = header_rom.s_prg_rom_16;
-            nes->cartridge.s_chr_rom_8  = header_rom.s_chr_rom_8;
+    int sprg = nes->cartridge.s_prg_rom_16 * 0x4000;
+    int schr = nes->cartridge.s_chr_rom_8 * 0x2000;
 
-            int sprg = nes->cartridge.s_prg_rom_16 * 0x4000;
-            int schr = nes->cartridge.s_chr_rom_8 * 0x2000;
+    nes->cartridge.chr = malloc(schr);
+    nes->cartridge.prg = malloc(sprg);
 
-            nes->cartridge.chr = malloc(schr);
-            nes->cartridge.prg = malloc(sprg);
+    fread(nes->cartridge.prg, sprg, 1, file);
+    fread(nes->cartridge.chr, schr, 1, file);
 
-            fread(nes->cartridge.prg, sprg, 1, file);
-            fread(nes->cartridge.chr, schr, 1, file);
+    cpu_reset(nes->cpu);
 
-            cpu_reset(nes->cpu);
-
-            break;
-
-        default:
-            break;
-    }
+    break;
 
     fclose(file);
 
