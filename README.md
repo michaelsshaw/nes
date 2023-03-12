@@ -9,6 +9,6 @@ Sound
 
 # Hey, look!
 
-![very cool nes screenshot](https://oify.best/public/nes-01.png)
+![very cool nes screenshot](https://michaelsshaw.com/public/nes-01.png)
 
 
