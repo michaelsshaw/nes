@@ -273,7 +273,7 @@ nes_window_loop(struct nes *nes)
     {
         now = nes_time_get();
 
-        SDL_SetRenderDrawColor(renderer, 80, 190, 190, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
 
         while (SDL_PollEvent(&ev))
