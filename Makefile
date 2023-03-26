@@ -1,5 +1,5 @@
 CFLAGS := -O2 -w -MMD
-CFLAGS += -Iinclude -I./6502/include -I/usr/lib/include/SDL2
+CFLAGS += -Iinclude -I./6502/include -I/usr/include/SDL2
 LDFLAGS := -lm -lSDL2
 
 SRC := $(wildcard *.c)
