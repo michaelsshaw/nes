@@ -7,3 +7,8 @@ This repository could use some clean up and refactoring. SDL2 does not need to b
 # TODO
 Sound
 
+# Hey, look!
+
+![very cool nes screenshot](https://i.imgur.com/YF9d7ED.png)
+
+
